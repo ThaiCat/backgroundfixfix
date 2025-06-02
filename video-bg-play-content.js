@@ -51,18 +51,6 @@ function sendKeyEvent (aEvent, aKey) {
   }));
 }
 
-/*
-function loop(aCallback, aDelay, aJitter) {
-  let jitter = getRandomInt(-aJitter/2, aJitter/2);
-  let delay = Math.max(aDelay + jitter, 0);
-
-  window.setTimeout(() => {
-                      aCallback();
-                      loop(aCallback, aDelay, aJitter);
-                    }, delay);
-}
-*/
-
 /**
  * Циклически выполняет callback со случайной задержкой между вызовами
  * @param {Function} callback - Функция для выполнения
