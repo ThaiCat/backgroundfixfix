@@ -30,8 +30,7 @@
   "permissions": [
     "*://*.youtube.com/*",
     "tabs",
-    "webNavigation",
-    "power"
+    "webNavigation"
   ],
   "background": {
     "scripts": ["video-bg-play-content.js"],
