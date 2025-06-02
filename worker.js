@@ -7,7 +7,7 @@ self.addEventListener('message', () => {
   // Пингуем вкладку с рандомным интервалом
   function ping() {
     self.postMessage('keepAlive');
-    setTimeout(ping, getRandomInt(12000, 18000)); // 8-15 сек
+    setTimeout(ping, getRandomInt(12000, 18000)); // 12-18 сек
   }
   ping();
 });
