@@ -10,8 +10,32 @@ const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
 
 // Page Visibility API
 if (IS_ANDROID || !IS_DESKTOP_YOUTUBE) {
-  Object.defineProperties(document.wrappedJSObject,
-    { 'hidden': {value: false}, 'visibilityState': {value: 'visible'} });
+ // Object.defineProperties(document.wrappedJSObject,
+ //   { 'hidden': {value: false}, 'visibilityState': {value: 'visible'} });
+
+
+
+    // Заменяем оригинальный Page Visibility API
+Object.defineProperty(document, 'hidden', {
+  get: () => false,
+  configurable: true
+});
+
+Object.defineProperty(document, 'visibilityState', {
+  get: () => 'visible',
+  configurable: true
+});
+
+// Блокируем события изменения видимости
+const originalAddEventListener = document.addEventListener;
+document.addEventListener = function(type, listener, options) {
+  if (type === 'visibilitychange') return;
+  originalAddEventListener.call(document, type, listener, options);
+};
+
+
+
+
 }
 
 window.addEventListener(
@@ -25,7 +49,7 @@ if (IS_VIMEO) {
 
 // User activity tracking
 if (IS_YOUTUBE) {
-  scheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
+ // scheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
 }
 
 // Запуск Web Worker
