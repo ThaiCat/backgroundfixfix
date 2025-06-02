@@ -1,12 +1,32 @@
 'use strict';
 
-const IS_YOUTUBE = window.location.hostname.search(/(?:^|.+\.)youtube\.com/) > -1 ||
-                   window.location.hostname.search(/(?:^|.+\.)youtube-nocookie\.com/) > -1;
+//const IS_YOUTUBE = window.location.hostname.search(/(?:^|.+\.)youtube\.com/) > -1 ||
+//                   window.location.hostname.search(/(?:^|.+\.)youtube-nocookie\.com/) > -1;
+//const IS_YOUTUBE = /^(www|m|music)\.youtube\.com$/.test(location.hostname);
+//const IS_YOUTUBE = /(^|\.)(youtube|youtube-nocookie)\.(com|net|org|co\.[a-z]{2})$/i.test(location.hostname);
+
+const IS_YOUTUBE = () => {
+  // Проверка уникальных элементов YouTube
+  if (document.querySelector('ytd-app, #player, ytm-mobile-page')) return true;
+  
+  // Проверка по мета-тегам
+  const meta = document.querySelector('meta[property="og:site_name"]');
+  return meta && meta.content.toLowerCase().includes('youtube');
+};
+
+
 const IS_MOBILE_YOUTUBE = window.location.hostname == 'm.youtube.com';
 const IS_DESKTOP_YOUTUBE = IS_YOUTUBE && !IS_MOBILE_YOUTUBE;
 const IS_VIMEO = window.location.hostname.search(/(?:^|.+\.)vimeo\.com/) > -1;
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
+
+console.log('User Agent:', navigator.userAgent);
+console.log('Hostname:', location.hostname);
+console.log('IS_YOUTUBE:', IS_YOUTUBE);
+console.log('IS_MOBILE_YOUTUBE:', IS_MOBILE_YOUTUBE);
+console.log('IS_VIMEO:', IS_VIMEO);
+console.log('IS_ANDROID:', IS_ANDROID);
 
 // Page Visibility API
 if (IS_ANDROID || !IS_DESKTOP_YOUTUBE) {
@@ -33,10 +53,14 @@ document.addEventListener = function(type, listener, options) {
   originalAddEventListener.call(document, type, listener, options);
 };
 
-
+console.log(`Page Visibility API`);
 
 
 }
+
+window.addEventListener('error', e => {
+  console.error('Global error:', e.message, e.filename, e.lineno);
+});
 
 window.addEventListener(
   'visibilitychange', evt => evt.stopImmediatePropagation(), true);
@@ -49,7 +73,8 @@ if (IS_VIMEO) {
 
 // User activity tracking
 if (IS_YOUTUBE) {
- // scheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
+    console.log(`IS_YOUTUBE`);
+  scheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
 }
 
 // Запуск Web Worker
@@ -57,13 +82,28 @@ const worker = new Worker('worker.js');
 worker.onmessage = () => {
   // Держите вкладку активной
   document.dispatchEvent(new Event('keepAlive'));
+  console.log(`workerdispatchEvent`);
 };
 
 function pressKey() {
-  const keyCodes = [18];
-  let key = keyCodes[getRandomInt(0, keyCodes.length)];
-  sendKeyEvent("keydown", key);
-  sendKeyEvent("keyup", key);
+
+    try 
+    {
+        // ... ваш код ...    
+        const keyCodes = [18];
+        let key = keyCodes[getRandomInt(0, keyCodes.length)];
+        sendKeyEvent("keydown", key);
+        sendKeyEvent("keyup", key);
+
+
+        console.log(`pressKey executed at ${Date.now()}`);
+  } 
+  catch (e) 
+  {
+    console.error('pressKey error:', e);
+  }
+  
+   console.log(`pressKey`);
 }
 
 function sendKeyEvent (aEvent, aKey) {
