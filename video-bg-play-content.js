@@ -25,7 +25,7 @@ if (IS_VIMEO) {
 
 // User activity tracking
 if (IS_YOUTUBE) {
-  scheduleCyclicTask(pressKey, 50000, 70000); // every minute +/- 5 seconds
+  scheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
 }
 
 // Запуск Web Worker
