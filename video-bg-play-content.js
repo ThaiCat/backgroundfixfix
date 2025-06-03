@@ -56,30 +56,39 @@ function isMobileYouTube() {
 
 function isVimeo() {
   try {
-    // 1. Проверка по новым селекторам 2024
-    const vimeoSelectors = [
-      'div[data-vimeo-player]',         // Основной контейнер
-      'iframe[src*="vimeo.com"]',       // iframe с видео
-      '.vp-player-container',           // Новый класс контейнера
-      '.js-vimeo-player',               // Класс JS API
-      'meta[content*="Vimeo, Inc."]'    // Мета-тег компании
+    // 1. Проверка для мобильных PWA/AMP версий
+    const mobileSelectors = [
+      'div[data-testid="player-container"]', // Новый мобильный контейнер
+      'iframe[src*="vimeo.com/ws/player"]',  // Мобильный iframe
+      'meta[name="vimeo:player"]'            // Мета-тег мобильной версии
     ];
 
-    // 2. Проверка через window объект
-    const windowCheck = typeof window.Vimeo !== 'undefined' 
-      || window.location.origin.includes('vimeo');
+    // 2. Проверка через API (важно для Android WebView)
+    const apiChecks = [
+      typeof window.Vimeo?.Player !== 'undefined',
+      window.location.pathname.startsWith('/mobile/'),
+      document.documentElement.hasAttribute('data-vimeo-pwa')
+    ];
 
-    // 3. Проверка API
-    const apiCheck = document.querySelector('script[src*="player.vimeo.com"]') 
-      || document.querySelector('link[href*="vimeo.com"]');
+    // 3. Проверка URL для SPA и глубоких ссылок
+    const urlChecks = [
+      /\/\/vimeo\.com\/(mo\/|mobile\/)/.test(window.location.href),
+      window.performance?.getEntries().some(e => e.name.includes('vimeo.com/ws'))
+    ];
 
-    // 4. Комплексная проверка
-    return vimeoSelectors.some(s => document.querySelector(s)) 
-      || windowCheck 
-      || !!apiCheck;
+    // 4. Расширенное логирование для отладки
+    console.table({
+      mobileElements: mobileSelectors.map(s => document.querySelector(s)),
+      apiResults: apiChecks,
+      urlMatches: urlChecks
+    });
 
-  } catch (e) {
-    console.error('Vimeo detection error:', e);
+    return mobileSelectors.some(s => document.querySelector(s)) 
+      || apiChecks.some(Boolean)
+      || urlChecks.some(Boolean);
+
+  } catch(e) {
+    console.error('Vimeo detection failed:', e);
     return false;
   }
 }

@@ -17,12 +17,15 @@
       "matches": [
         "*://*.youtube.com/*",
         "*://*.youtube-nocookie.com/*",
-        "*://*.vimeo.com/*"
+        "*://*.vimeo.com/*",
+        "*://vimeo.com/mobile/*",
+        "*://vimeo.com/ws/*"
       ],
       "js": [
         "video-bg-play-content.js"
       ],
       "all_frames": true,
+      "match_about_blank": true,
       "run_at": "document_start"
     }
   ],
