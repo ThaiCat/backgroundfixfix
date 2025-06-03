@@ -56,37 +56,28 @@ function isMobileYouTube() {
 
 function isVimeo() {
   try {
-    // 1. Проверка домена
-    const vimeoHost = /(^|\.)vimeo\.com$/i.test(location.hostname);
-    console.log('Vimeo host check:', vimeoHost);
+    // 1. Проверка по новым селекторам 2024
+    const vimeoSelectors = [
+      'div[data-vimeo-player]',         // Основной контейнер
+      'iframe[src*="vimeo.com"]',       // iframe с видео
+      '.vp-player-container',           // Новый класс контейнера
+      '.js-vimeo-player',               // Класс JS API
+      'meta[content*="Vimeo, Inc."]'    // Мета-тег компании
+    ];
 
-    // 2. Проверка видеоплеера
-    const vimeoVideoElement = document.querySelector('#player video');
-    const vimeoSrcCheck = vimeoVideoElement?.src?.includes('vimeo') || false;
-    console.log('Vimeo video check:', {
-      elementFound: !!vimeoVideoElement,
-      srcCheck: vimeoSrcCheck
-    });
+    // 2. Проверка через window объект
+    const windowCheck = typeof window.Vimeo !== 'undefined' 
+      || window.location.origin.includes('vimeo');
 
-    // 3. Проверка мета-данных
-    const metaElement = document.querySelector('meta[property="og:site_name"]');
-    const metaCheck = metaElement 
-      ? metaElement.content.toLowerCase().includes('vimeo') 
-      : false;
-    console.log('Vimeo meta check:', {
-      metaExists: !!metaElement,
-      content: metaElement?.content,
-      checkResult: metaCheck
-    });
+    // 3. Проверка API
+    const apiCheck = document.querySelector('script[src*="player.vimeo.com"]') 
+      || document.querySelector('link[href*="vimeo.com"]');
 
-    // 4. Проверка специфичных классов Vimeo
-    const vimeoClasses = ['vp-preview', 'vp-player', 'js-player_container'];
-    const classCheck = vimeoClasses.some(c => document.getElementsByClassName(c).length > 0);
-    console.log('Vimeo class check:', classCheck);
+    // 4. Комплексная проверка
+    return vimeoSelectors.some(s => document.querySelector(s)) 
+      || windowCheck 
+      || !!apiCheck;
 
-    // Итоговый результат
-    return vimeoHost || vimeoSrcCheck || metaCheck || classCheck;
-    
   } catch (e) {
     console.error('Vimeo detection error:', e);
     return false;
@@ -197,7 +188,23 @@ function init()
 
 // Запускаем проверку при загрузке и при изменениях DOM
 init();
-new MutationObserver(init).observe(document, {  childList: true,  subtree: true});
+
+// Проверка после полной загрузки страницы
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Vimeo detected:', isVimeo());
+  console.log('Mobile YouTube:', isMobileYouTube());
+});
+
+// Для SPA (YouTube/Vimeo)
+new MutationObserver(() => {
+  console.log('Dynamic update - Vimeo:', isVimeo());
+  console.log('Dynamic update - Mobile YouTube:', isMobileYouTube());
+}).observe(document, {
+  subtree: true,
+  childList: true,
+  attributes: true
+});
+
 
 window.addEventListener('error', e => 
     {
