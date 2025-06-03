@@ -88,6 +88,7 @@ console.log('isAndroidYoutube:', isAndroidYoutube);
 console.log('isAndroidYoutube():', isAndroidYoutube());
 
 console.log('IS_VIMEO:', IS_VIMEO);
+//console.log('IS_VIMEO():', IS_VIMEO());
 
 function overrideVisibilityAPI()
 {
