@@ -11,12 +11,62 @@ const IS_YOUTUBE = () =>
     // Проверка по мета-тегам
     const meta = document.querySelector('meta[property="og:site_name"]');
     return meta && meta.content.toLowerCase().includes('youtube');
-};
+}
 
+function isMobileYouTube() {
+  // 1. Проверка по URL
+  if (location.hostname.startsWith('m.') || location.hostname === 'youtube.com') {
+    const path = location.pathname;
+    if (path.startsWith('/watch') || path.startsWith('/shorts')) return true;
+  }
 
-const IS_MOBILE_YOUTUBE = window.location.hostname == 'm.youtube.com';
+  // 2. Проверка мобильных классов
+  const mobileClasses = [
+    'ytm-pivot-bar',      // Панель навигации
+    'ytm-slim-page',      // Верстка мобильной версии
+    'ytm-player-container'// Контейнер плеера
+  ];
+  
+  // 3. Проверка мобильных атрибутов
+  const mobileAttributes = {
+    'data-is-mobile': 'true',
+    'ytm-version': /\d+/,
+    'is-mobile-app': null
+  };
+
+  return [
+    // Проверка классов
+    mobileClasses.some(c => document.getElementsByClassName(c).length > 0),
+    
+    // Проверка атрибутов
+    Object.entries(mobileAttributes).some(([attr, val]) => {
+      const element = document.querySelector(`[${attr}]`);
+      if (!element) return false;
+      return val instanceof RegExp 
+        ? val.test(element.getAttribute(attr))
+        : element.hasAttribute(attr);
+    }),
+    
+    // Проверка через user-agent (резервный метод)
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  ].some(Boolean);
+}
+
+function isVimeo() {
+  // Проверка по домену и DOM-элементам
+  const isVimeoHost = /(^|\.)vimeo\.com$/i.test(location.hostname);
+  const vimeoPlayer = document.querySelector('#player video')?.src.includes('vimeo');
+  
+  // Проверка через мета-теги
+  const meta = document.querySelector('meta[property="og:site_name"]');
+  const isVimeoMeta = meta?.content.toLowerCase().includes('vimeo');
+
+  return isVimeoHost || !!vimeoPlayer || isVimeoMeta;
+}
+
+const IS_MOBILE_YOUTUBE = isMobileYouTube();
 const IS_DESKTOP_YOUTUBE = IS_YOUTUBE && !IS_MOBILE_YOUTUBE;
-const IS_VIMEO = window.location.hostname.search(/(?:^|.+\.)vimeo\.com/) > -1;
+const IS_VIMEO = isVimeo();
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
 const ANDROID_YOUTUBE_CLASSES = [
@@ -33,10 +83,11 @@ console.log('IS_YOUTUBE:', IS_YOUTUBE);
 console.log('IS_YOUTUBE():', IS_YOUTUBE());
 console.log('IS_DESKTOP_YOUTUBE:', IS_DESKTOP_YOUTUBE);
 console.log('IS_MOBILE_YOUTUBE:', IS_MOBILE_YOUTUBE);
-console.log('IS_VIMEO:', IS_VIMEO);
 console.log('IS_ANDROID:', IS_ANDROID);
 console.log('isAndroidYoutube:', isAndroidYoutube);
 console.log('isAndroidYoutube():', isAndroidYoutube());
+
+console.log('IS_VIMEO:', IS_VIMEO);
 
 function overrideVisibilityAPI()
 {
