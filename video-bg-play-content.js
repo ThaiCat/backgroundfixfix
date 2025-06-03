@@ -133,6 +133,7 @@ function simulateActivity() {
   }
 }
 
+/*
 function init() 
 {
     console.log('init');
@@ -163,7 +164,7 @@ function init()
 // Запускаем проверку при загрузке и при изменениях DOM
 init();
 
-
+*/
 
 
 
@@ -223,48 +224,61 @@ async function isCurrentTabYouTube() {
   return false;
 }
 
-// --- Примеры использования функции isCurrentTabVimeo() ---
+
+// --- Примеры использования обеих функций ---
+
+// Функция для обработки изменения статуса вкладки (Vimeo/YouTube/Other)
+async function handleTabStatusChange() {
+    const isVimeo = await isCurrentTabVimeo();
+    const isYouTube = await isCurrentTabYouTube();
+
+    if (isVimeo) 
+    {
+        console.log("CurrentTab: Vimeo");        
+        if(isVimeoPage)
+        {
+            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+        }
+        else
+        {
+
+        }
+    } 
+    else if (isYouTube) 
+    {
+        console.log("CurrentTab: YouTube");
+
+        overrideVisibilityAPI();
+        startWorker();
+        scheduleCyclicTask(pressKey, 48000, 59000);
+    } 
+    else 
+    {
+        console.log("CurrentTab: other");
+        // Выполните действия по умолчанию
+        // browser.action.setIcon({ path: "icons/default-icon.png" });
+    }
+}
+
 
 // 1. Слушатель для переключения вкладок
 browser.tabs.onActivated.addListener(async (activeInfo) => {
-  if (await isCurrentTabVimeo()) { // Используем await, так как isCurrentTabVimeo() возвращает Promise
-    console.log(`[Event: onActivated] current tab is Vimeo! Tab ID: ${activeInfo.tabId}`);
-    // Например: browser.action.setIcon({ tabId: activeInfo.tabId, path: "icons/vimeo-active-icon.png" });
-  } else {
-    console.log(`[Event: onActivated] current tab is NOT Vimeo. Tab ID: ${activeInfo.tabId}`);
-    // Например: browser.action.setIcon({ tabId: activeInfo.tabId, path: "icons/icon-16.png" });
-  }
+  console.log(`[Event: onActivated] Tab ${activeInfo.tabId} activated.`);
+  await handleTabStatusChange();
 });
 
 // 2. Слушатель для обновлений вкладки
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Убеждаемся, что это активная вкладка и что URL изменился или страница полностью загрузилась
   if (tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
-    if (await isCurrentTabVimeo()) { // Используем await
-      console.log(`[Event: onUpdated] current tab is Vimeo! Tab ID: ${tabId}`);
-      // Например: browser.action.setIcon({ tabId: tabId, path: "icons/vimeo-active-icon.png" });
-    } else {
-      console.log(`[Event: onUpdated] current tab is NOT Vimeo. Tab ID: ${tabId}`);
-      // Например: browser.action.setIcon({ tabId: tabId, path: "icons/icon-16.png" });
-    }
+    console.log(`[Event: onUpdated] CurrentTab ${tabId} updated.`);
+    await handleTabStatusChange();
   }
 });
 
 // 3. Начальная проверка при запуске расширения
-// Используем асинхронную IIFE (Immediately Invoked Function Expression)
-// чтобы можно было использовать await на верхнем уровне
 (async () => {
-  if (await isCurrentTabVimeo()) { // Используем await
-    console.log("[Initial Check] current tab is vimeo.");
-    // Например: Здесь можно получить текущую активную вкладку и установить иконку
-    // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    // if (tabs[0]) browser.action.setIcon({ tabId: tabs[0].id, path: "icons/vimeo-active-icon.png" });
-  } else {
-    console.log("[Initial Check] current tab is not vimeo.");
-    // Например:
-    // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    // if (tabs[0]) browser.action.setIcon({ tabId: tabs[0].id, path: "icons/icon-16.png" });
-  }
+  console.log("[Initial Check]");
+  await handleTabStatusChange();
 })();
 
 
