@@ -1,11 +1,9 @@
 {
   "manifest_version": 2,
   "name": "Background_FixFix",
-  "default_locale": "en",
   "version": "1.0.0",
-  "description": "Play back videos in background even if a page doesn't want you to. Works on android 15",
+  "description": "Play back videos in background even if a page doesn't want you to.",
   "icons": {
-    "48": "icon.png"
     "96": "icon.png"
   },
   "applications": {
