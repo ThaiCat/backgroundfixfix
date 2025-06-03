@@ -176,11 +176,27 @@ function init()
         startWorker();
         scheduleCyclicTask(pressKey, 48000, 59000);
     }
-    // Fullscreen API
-    if (IS_VIMEO)
+
+    isCurrentTabVimeo().then(isVimeoPage =>
     {
-        window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+        console.log('isVimeoPage', isVimeoPage);
+        if(isVimeoPage)
+        {
+            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+        }
+        else
+        {
+
+        }
     }
+    
+    
+    //)
+    // Fullscreen API
+    //if (IS_VIMEO)
+    //{
+    //    window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+    //}
 }
 
 // Запускаем проверку при загрузке и при изменениях DOM
@@ -285,65 +301,80 @@ console.log('Vimeo detection debug:', {
 
 
 // Регулярное выражение для определения URL Vimeo
-// Оно совпадает с vimeo.com и любыми поддоменами, такими как player.vimeo.com
 const VIMEO_URL_REGEX = /^https?:\/\/(?:[^.]+\.)?vimeo\.com/;
 
 /**
- * Проверяет, является ли URL вкладки страницей Vimeo.
- * @param {object} tab - Объект вкладки, предоставленный browser.tabs API.
+ * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей Vimeo,
+ * иначе возвращает false.
+ *
+ * Поскольку получение информации о вкладке - это асинхронная операция, эта функция должна быть async
+ * и будет возвращать Promise, который разрешится в boolean (true/false).
+ *
+ * @returns {Promise<boolean>} Промис, который разрешается в true, если текущая активная вкладка - Vimeo, иначе false.
  */
-function checkIfVimeoPage(tab) {
-  // Убедитесь, что у вкладки есть URL и он совпадает с нашим регулярным выражением
-  if (tab.url && VIMEO_URL_REGEX.test(tab.url)) {
-    console.log(`Обнаружена страница Vimeo во вкладке ${tab.id}: ${tab.url}`);
-    // Здесь вы можете выполнить любое действие, когда страница Vimeo обнаружена:
-    // 1. Изменить иконку расширения
-    // browser.action.setIcon({ tabId: tab.id, path: "icons/vimeo-active-icon.png" });
-    // 2. Отправить сообщение popup-скрипту
-    // browser.runtime.sendMessage({ type: "VIMEO_PAGE_DETECTED", tabId: tab.id, url: tab.url });
-    // 3. Инжектировать контент-скрипт (если у вас есть разрешение "scripting")
-    // injectContentScript(tab.id);
-    return true;
-  } else {
-    // console.log(`Не страница Vimeo во вкладке ${tab.id}: ${tab.url}`);
-    // Если вам нужно сбросить состояние, когда вкладка НЕ Vimeo:
-    // browser.action.setIcon({ tabId: tab.id, path: "icons/icon-16.png" }); // Вернуть иконку по умолчанию
+async function isCurrentTabVimeo() {
+  try {
+    // Запрашиваем активную вкладку в текущем окне
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+
+    // Если нашли активную вкладку
+    if (tabs && tabs.length > 0) {
+      const currentTab = tabs[0];
+      // Проверяем URL этой вкладки
+      return currentTab.url && VIMEO_URL_REGEX.test(currentTab.url);
+    }
+  } catch (error) {
+    console.error("[isCurrentTabVimeo] Ошибка при получении текущей вкладки:", error);
+    // В случае ошибки предполагаем, что это не Vimeo
     return false;
   }
+  // Если вкладок не найдено или что-то пошло не так
+  return false;
 }
 
-// Слушатель для изменений URL вкладок
-// Он срабатывает, когда вкладка обновляется, перенаправляется или загружает новый URL
-browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // `changeInfo.url` указывает на то, что URL вкладки изменился
-  // Или вы можете использовать `changeInfo.status === 'complete'` для проверки, когда страница полностью загрузилась
-  if (changeInfo.url) { // Или changeInfo.status === 'complete' для более точной загрузки
-    checkIfVimeoPage(tab);
+// --- Примеры использования функции isCurrentTabVimeo() ---
+
+// 1. Слушатель для переключения вкладок
+browser.tabs.onActivated.addListener(async (activeInfo) => {
+  if (await isCurrentTabVimeo()) { // Используем await, так как isCurrentTabVimeo() возвращает Promise
+    console.log(`[Event: onActivated] Текущая активная вкладка является Vimeo! Tab ID: ${activeInfo.tabId}`);
+    // Например: browser.action.setIcon({ tabId: activeInfo.tabId, path: "icons/vimeo-active-icon.png" });
+  } else {
+    console.log(`[Event: onActivated] Текущая активная вкладка НЕ является Vimeo. Tab ID: ${activeInfo.tabId}`);
+    // Например: browser.action.setIcon({ tabId: activeInfo.tabId, path: "icons/icon-16.png" });
   }
 });
 
-// Дополнительно: Проверяем все существующие вкладки при запуске расширения
-browser.tabs.query({}).then(tabs => {
-  for (let tab of tabs) {
-    checkIfVimeoPage(tab);
+// 2. Слушатель для обновлений вкладки
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Убеждаемся, что это активная вкладка и что URL изменился или страница полностью загрузилась
+  if (tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
+    if (await isCurrentTabVimeo()) { // Используем await
+      console.log(`[Event: onUpdated] Текущая активная вкладка является Vimeo! Tab ID: ${tabId}`);
+      // Например: browser.action.setIcon({ tabId: tabId, path: "icons/vimeo-active-icon.png" });
+    } else {
+      console.log(`[Event: onUpdated] Текущая активная вкладка НЕ является Vimeo. Tab ID: ${tabId}`);
+      // Например: browser.action.setIcon({ tabId: tabId, path: "icons/icon-16.png" });
+    }
   }
 });
 
-/*
-// Пример функции для инжектирования контент-скрипта (если необходимо взаимодействовать с DOM)
-// Для этого вам нужно добавить "scripting" в permissions и host_permissions для домена Vimeo
-async function injectContentScript(tabId) {
-  try {
-    await browser.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ["content-script.js"] // Имя вашего контент-скрипта
-    });
-    console.log(`Контент-скрипт успешно инжектирован во вкладку ${tabId}`);
-  } catch (error) {
-    console.error(`Ошибка при инжектировании контент-скрипта во вкладку ${tabId}:`, error);
+// 3. Начальная проверка при запуске расширения
+// Используем асинхронную IIFE (Immediately Invoked Function Expression)
+// чтобы можно было использовать await на верхнем уровне
+(async () => {
+  if (await isCurrentTabVimeo()) { // Используем await
+    console.log("[Initial Check] Vimeo обнаружен при запуске расширения.");
+    // Например: Здесь можно получить текущую активную вкладку и установить иконку
+    // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    // if (tabs[0]) browser.action.setIcon({ tabId: tabs[0].id, path: "icons/vimeo-active-icon.png" });
+  } else {
+    console.log("[Initial Check] При запуске расширения текущая вкладка НЕ Vimeo.");
+    // Например:
+    // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    // if (tabs[0]) browser.action.setIcon({ tabId: tabs[0].id, path: "icons/icon-16.png" });
   }
-}
-*/
+})();
 
 
 
