@@ -36,6 +36,7 @@ console.log('IS_MOBILE_YOUTUBE:', IS_MOBILE_YOUTUBE);
 console.log('IS_VIMEO:', IS_VIMEO);
 console.log('IS_ANDROID:', IS_ANDROID);
 console.log('isAndroidYoutube:', isAndroidYoutube);
+console.log('isAndroidYoutube():', isAndroidYoutube());
 
 function overrideVisibilityAPI()
 {
