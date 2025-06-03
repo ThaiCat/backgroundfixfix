@@ -132,8 +132,9 @@ function init()
         {
             console.log("YouTube android");
             overrideVisibilityAPI();
-            startWorker();
-            scheduleCyclicTask(pressKey, 25000, 30000);
+            //preventClose();
+            //startWorker();
+            //scheduleCyclicTask(pressKey, 25000, 30000);
         }    
     });
     
@@ -150,6 +151,50 @@ function init()
 init();
 
 
+
+const originalClose = window.close;
+
+window.close = function() {
+  // Проверяем, есть ли активное видео/аудио
+  const mediaElements = document.querySelectorAll('video, audio');
+  const isMediaPlaying = [...mediaElements].some(media => !media.paused);
+
+  // Отменяем закрытие, если медиа играет
+  if (isMediaPlaying) {
+    console.log("Blocked automatic tab closure.");
+    return;
+  }
+
+  // Вызываем оригинальный метод
+  originalClose.apply(this, arguments);
+};
+
+// Блокировка перенаправлений при активном медиа
+window.addEventListener("beforeunload", (e) => {
+  const mediaElements = document.querySelectorAll('video, audio');
+  const isMediaPlaying = [...mediaElements].some(media => !media.paused);
+  
+  if (isMediaPlaying && !e.isTrusted) { // isTrusted: false для программных событий
+    e.preventDefault();
+    e.returnValue = "";
+  }
+}, { capture: true });
+
+// Удерживаем фокус вкладки, если на ней есть активное видео
+browser.tabs.onActivated.addListener((activeInfo) => {
+  browser.tabs.get(activeInfo.tabId)
+    .then(tab => {
+      return browser.tabs.executeScript(activeInfo.tabId, {
+        code: `document.querySelector('video:not(:paused), audio:not(:paused)') !== null`
+      });
+    })
+    .then(result => {
+      if (result && result[0]) {
+        console.log("Media is playing, keeping tab active.");
+      }
+    })
+    .catch(error => console.error("Error:", error));
+});
 
 // --- Примеры использования обеих функций ---
 
@@ -239,13 +284,14 @@ function scheduleCyclicTask(callback, minDelayMs, maxDelayMs) {
   }
 
   // Генерация случайной задержки в заданном диапазоне
-  const getRandomDelay = () => 
-    Math.floor(Math.random() * (maxDelayMs - minDelayMs)) + minDelayMs;
+  const getRandomDelay = () => Math.floor(Math.random() * (maxDelayMs - minDelayMs)) + minDelayMs;
 
   // Планирование следующего выполнения
-  const scheduleNext = () => {
+  const scheduleNext = () => 
+  {
     const delay = getRandomDelay();
-    window.setTimeout(() => {
+    window.setTimeout(() => 
+    {
       callback();
       scheduleNext();
     }, delay);
@@ -255,6 +301,7 @@ function scheduleCyclicTask(callback, minDelayMs, maxDelayMs) {
   scheduleNext();
 }
 
-function getRandomInt(aMin, aMax) {
+function getRandomInt(aMin, aMax) 
+{
   return Math.floor(Math.random() * (aMax - aMin)) + aMin;
 }
