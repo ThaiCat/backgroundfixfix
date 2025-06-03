@@ -122,47 +122,44 @@ async function isCurrentTabYouTube() {
   return false;
 }
 
+function init()
+{
+    isCurrentTabYouTube().then(isYouTube =>
+    {    
+        IS_YOUTUBE = true;
+        console.log("CurrentTab: YouTube");
+        if(IS_ANDROID)
+        {
+            console.log("YouTube android");
+            overrideVisibilityAPI();
+            startWorker();
+            scheduleCyclicTask(pressKey, 48000, 59000);
+        }    
+    });
+    
+    isCurrentTabVimeo().then(isVimeo =>
+    {    
+        console.log("CurrentTab: Vimeo");        
+        if(isVimeo)
+        {
+            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+        }  
+    });
+}
+
+init();
+
+
 
 // --- Примеры использования обеих функций ---
 
 // Функция для обработки изменения статуса вкладки (Vimeo/YouTube/Other)
 async function handleTabStatusChange() {
     const isVimeo = await isCurrentTabVimeo();
-    //const isYouTube = await isCurrentTabYouTube();
+    const isYouTube = await isCurrentTabYouTube();
     
-    isCurrentTabYouTube().then(isYouTube => 
-    {
-        if (isYouTube)
-        {
-            IS_YOUTUBE = true;
-            console.log("CurrentTab: YouTube");
-            if(IS_ANDROID)
-            {
-                overrideVisibilityAPI();
-                startWorker();
-                scheduleCyclicTask(pressKey, 48000, 59000);
-            }
-        }
-    });
-
-    if (isVimeo) 
-    {
-        console.log("CurrentTab: Vimeo");        
-        if(isVimeoPage)
-        {
-            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
-        }
-        else
-        {
-
-        }
-    }     
-    else 
-    {
-        console.log("CurrentTab: other");
-        // Выполните действия по умолчанию
-        // browser.action.setIcon({ path: "icons/default-icon.png" });
-    }
+    console.log("isVimeo", isVimeo);
+    console.log("isYouTube", isYouTube);
 }
 
 
