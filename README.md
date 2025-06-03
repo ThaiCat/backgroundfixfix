@@ -1,4 +1,4 @@
-# Video Background Play Fix  ![logo](/icon.svg)
+# Video Background Play Fix Fix  ![logo](/icon.png)
 
 Firefox for Android can continue playing video even if you switch to another tab or app.
 However, sites can detect these user actions with the [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) and the [Fullscreen API](https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API).

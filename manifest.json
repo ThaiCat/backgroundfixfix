@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Background_FixFix",
+  "name": "Video Background Play Fix Fix",
   "version": "1.0.0",
-  "description": "Play back videos in background even if a page doesn't want you to.",
+  "description": "Play back videos in background even if a page really doesn't want you to.",
   "icons": {
     "96": "icon.png"
   },

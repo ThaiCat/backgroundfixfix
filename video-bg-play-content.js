@@ -20,99 +20,149 @@ const IS_DESKTOP_YOUTUBE = IS_YOUTUBE && !IS_MOBILE_YOUTUBE;
 const IS_VIMEO = window.location.hostname.search(/(?:^|.+\.)vimeo\.com/) > -1;
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
+const ANDROID_YOUTUBE_CLASSES = [
+  'ytm-pivot-bar', 
+  'ytm-slim-page',
+  'ytm-player-container'
+];
+
+const isAndroidYoutube = () => ANDROID_YOUTUBE_CLASSES.some(c => document.getElementsByClassName(c).length > 0);
 
 console.log('User Agent:', navigator.userAgent);
 console.log('Hostname:', location.hostname);
 console.log('IS_YOUTUBE:', IS_YOUTUBE);
+console.log('IS_YOUTUBE():', IS_YOUTUBE());
+console.log('IS_DESKTOP_YOUTUBE:', IS_DESKTOP_YOUTUBE);
 console.log('IS_MOBILE_YOUTUBE:', IS_MOBILE_YOUTUBE);
 console.log('IS_VIMEO:', IS_VIMEO);
 console.log('IS_ANDROID:', IS_ANDROID);
+console.log('isAndroidYoutube:', isAndroidYoutube);
 
-// Page Visibility API
-if (IS_ANDROID || !IS_DESKTOP_YOUTUBE) {
- // Object.defineProperties(document.wrappedJSObject,
- //   { 'hidden': {value: false}, 'visibilityState': {value: 'visible'} });
-
-
+function overrideVisibilityAPI()
+{
+    window.addEventListener( 'visibilitychange', evt => evt.stopImmediatePropagation(), true); //отключает многовенную паузу при выключении экрана
 
     // Заменяем оригинальный Page Visibility API
-Object.defineProperty(document, 'hidden', {
-  get: () => false,
-  configurable: true
-});
+    Object.defineProperty(document, 'hidden', {  get: () => false,  configurable: true});
+    Object.defineProperty(document, 'visibilityState', {  get: () => 'visible',  configurable: true});
 
-Object.defineProperty(document, 'visibilityState', {
-  get: () => 'visible',
-  configurable: true
-});
+    // Блокируем события изменения видимости
+    const originalAddEventListener = document.addEventListener;
+    document.addEventListener = function(type, listener, options) 
+    {
+        if (type === 'visibilitychange') return;
+        originalAddEventListener.call(document, type, listener, options);
+    };
 
-// Блокируем события изменения видимости
-const originalAddEventListener = document.addEventListener;
-document.addEventListener = function(type, listener, options) {
-  if (type === 'visibilitychange') return;
-  originalAddEventListener.call(document, type, listener, options);
-};
-
-console.log(`Page Visibility API`);
-
-
+    console.log(`Page Visibility API`);
 }
 
-window.addEventListener('error', e => {
-  console.error('Global error:', e.message, e.filename, e.lineno);
-});
+function startWorker()
+{
+  console.log('Starting Web Worker');
+  
+  const worker = new Worker('worker.js');
+  
+  worker.onmessage = (e) => {
+    if (e.data.type === 'ping') {
+      console.log('Worker ping received');
+      
+      // Имитируем активность в основном потоке
+      simulateActivity();
+      document.dispatchEvent(new Event('keepAlive'));
+    }
+  };
 
-window.addEventListener(
-  'visibilitychange', evt => evt.stopImmediatePropagation(), true);
+  worker.postMessage('start');
+}
+
+function simulateActivity() {
+  try {
+    console.log('Simulating activity');
+    
+    // Имитация пользовательской активности
+    const events = ['mousemove', 'keydown', 'scroll'];
+    events.forEach(event => {
+      document.dispatchEvent(new Event(event, { bubbles: true }));
+    });
+    
+    // Дополнительная активность для YouTube
+    if (IS_YOUTUBE) {
+      document.querySelector('video')?.play();
+    }
+  } catch (e) {
+    console.error('Activity simulation failed:', e);
+  }
+}
+
+function init() 
+{
+    console.log('init');
+    if (IS_ANDROID || !IS_DESKTOP_YOUTUBE || IS_YOUTUBE() || isAndroidYoutube())
+    {
+        console.log('Initializing YouTube background playback');
+        
+        // Ваша основная логика
+        overrideVisibilityAPI();
+        startWorker();
+        scheduleCyclicTask(pressKey, 48000, 59000);
+    }
+}
+
+// Запускаем проверку при загрузке и при изменениях DOM
+init();
+new MutationObserver(init).observe(document, {  childList: true,  subtree: true});
+
+window.addEventListener('error', e => 
+    {
+        console.error('Global error:', e.message, e.filename, e.lineno);
+    }
+);
+
 
 // Fullscreen API
-if (IS_VIMEO) {
-  window.addEventListener(
-    'fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+if (IS_VIMEO)
+{
+    window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
 }
 
 // User activity tracking
-if (IS_YOUTUBE) {
+if (IS_YOUTUBE) 
+{
     console.log(`IS_YOUTUBE`);
-  scheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
+    //cheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
 }
 
-// Запуск Web Worker
-const worker = new Worker('worker.js');
-worker.onmessage = () => {
-  // Держите вкладку активной
-  document.dispatchEvent(new Event('keepAlive'));
-  console.log(`workerdispatchEvent`);
-};
 
-function pressKey() {
 
-    try 
+function pressKey() 
+{
+    try
     {
         // ... ваш код ...    
         const keyCodes = [18];
         let key = keyCodes[getRandomInt(0, keyCodes.length)];
         sendKeyEvent("keydown", key);
         sendKeyEvent("keyup", key);
-
-
+        
         console.log(`pressKey executed at ${Date.now()}`);
-  } 
-  catch (e) 
-  {
-    console.error('pressKey error:', e);
-  }
-  
-   console.log(`pressKey`);
+    }
+    catch (e)
+    {
+        console.error('pressKey error:', e);
+    }
+    console.log(`pressKey`);
 }
 
-function sendKeyEvent (aEvent, aKey) {
-  document.dispatchEvent(new KeyboardEvent(aEvent, {
-    bubbles: true,
-    cancelable: true,
-    keyCode: aKey,
-    which: aKey,
-  }));
+function sendKeyEvent (aEvent, aKey)
+{
+    document.dispatchEvent(new KeyboardEvent(aEvent, 
+    {
+        bubbles: true,
+        cancelable: true,
+        keyCode: aKey,
+        which: aKey,
+    }));
 }
 
 /**
