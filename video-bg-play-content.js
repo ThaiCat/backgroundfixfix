@@ -1,17 +1,16 @@
 'use strict';
 
-//const IS_YOUTUBE = window.location.hostname.search(/(?:^|.+\.)youtube\.com/) > -1 ||
-//                   window.location.hostname.search(/(?:^|.+\.)youtube-nocookie\.com/) > -1;
-//const IS_YOUTUBE = /^(www|m|music)\.youtube\.com$/.test(location.hostname);
-//const IS_YOUTUBE = /(^|\.)(youtube|youtube-nocookie)\.(com|net|org|co\.[a-z]{2})$/i.test(location.hostname);
-
-const IS_YOUTUBE = () => {
-  // Проверка уникальных элементов YouTube
-  if (document.querySelector('ytd-app, #player, ytm-mobile-page')) return true;
-  
-  // Проверка по мета-тегам
-  const meta = document.querySelector('meta[property="og:site_name"]');
-  return meta && meta.content.toLowerCase().includes('youtube');
+const IS_YOUTUBE = () =>
+{
+    const testyt = /(^|\.)(youtube|youtube-nocookie)\.(com|net|org|co\.[a-z]{2})$/i.test(location.hostname);
+    console.log("testyt:", testyt);
+    if (testyt) return true;
+    // Проверка уникальных элементов YouTube
+    if (document.querySelector('ytd-app, #player, ytm-mobile-page')) return true;
+    
+    // Проверка по мета-тегам
+    const meta = document.querySelector('meta[property="og:site_name"]');
+    return meta && meta.content.toLowerCase().includes('youtube');
 };
 
 
@@ -107,6 +106,11 @@ function init()
         startWorker();
         scheduleCyclicTask(pressKey, 48000, 59000);
     }
+    // Fullscreen API
+    if (IS_VIMEO)
+    {
+        window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+    }
 }
 
 // Запускаем проверку при загрузке и при изменениях DOM
@@ -120,26 +124,11 @@ window.addEventListener('error', e =>
 );
 
 
-// Fullscreen API
-if (IS_VIMEO)
-{
-    window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
-}
-
-// User activity tracking
-if (IS_YOUTUBE) 
-{
-    console.log(`IS_YOUTUBE`);
-    //cheduleCyclicTask(pressKey, 48000, 59000); // every minute +/- 5 seconds
-}
-
-
-
 function pressKey() 
 {
     try
     {
-        // ... ваш код ...    
+        // ...код ...    
         const keyCodes = [18];
         let key = keyCodes[getRandomInt(0, keyCodes.length)];
         sendKeyEvent("keydown", key);
