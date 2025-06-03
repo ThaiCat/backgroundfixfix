@@ -1,6 +1,7 @@
 'use strict';
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
+const IS_YOUTUBE = false;
 
 console.log('User Agent:', navigator.userAgent);
 console.log('Hostname:', location.hostname);
@@ -132,6 +133,7 @@ async function handleTabStatusChange() {
     
     if (isYouTube) 
     {
+        IS_YOUTUBE = true;
         console.log("CurrentTab: YouTube");
         if(IS_ANDROID)
         {
