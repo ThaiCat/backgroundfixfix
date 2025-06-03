@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Play back videos in background even if a page really doesn't want you to.",
   "icons": {
-    "96": "icon.png"
+    "48": "icon.png"
   },
   "applications": {
     "gecko": {
