@@ -55,42 +55,30 @@ function isMobileYouTube() {
 }
 
 function isVimeo() {
-  try {
-    // 1. Проверка для мобильных PWA/AMP версий
-    const mobileSelectors = [
-      'div[data-testid="player-container"]', // Новый мобильный контейнер
-      'iframe[src*="vimeo.com/ws/player"]',  // Мобильный iframe
-      'meta[name="vimeo:player"]'            // Мета-тег мобильной версии
-    ];
+  // 1. Проверка network-запросов
+  const networkEvidence = performance.getEntriesByType('resource').some(entry => 
+    entry.name.includes('player.vimeo.com') || 
+    entry.initiatorType === 'xmlhttprequest' && entry.name.includes('/vimeo/')
+  );
 
-    // 2. Проверка через API (важно для Android WebView)
-    const apiChecks = [
-      typeof window.Vimeo?.Player !== 'undefined',
-      window.location.pathname.startsWith('/mobile/'),
-      document.documentElement.hasAttribute('data-vimeo-pwa')
-    ];
+  // 2. Проверка через WebAssembly (новые плееры Vimeo)
+  const wasmCheck = Array.from(document.scripts).some(script => 
+    script.src.includes('vimeo.com/wasm/')
+  );
 
-    // 3. Проверка URL для SPA и глубоких ссылок
-    const urlChecks = [
-      /\/\/vimeo\.com\/(mo\/|mobile\/)/.test(window.location.href),
-      window.performance?.getEntries().some(e => e.name.includes('vimeo.com/ws'))
-    ];
+  // 3. Анализ Web Workers
+  const workerCheck = Array.from(navigator.serviceWorker?.controller?.scriptURL || []).some(url => 
+    url.includes('vimeo.com/sw.js')
+  );
 
-    // 4. Расширенное логирование для отладки
-    console.table({
-      mobileElements: mobileSelectors.map(s => document.querySelector(s)),
-      apiResults: apiChecks,
-      urlMatches: urlChecks
-    });
+  // 4. Проверка WebGL (рендеринг видео)
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl');
+  const webglCheck = gl ? 
+    gl.getParameter(gl.VENDOR).includes('Vimeo') : 
+    false;
 
-    return mobileSelectors.some(s => document.querySelector(s)) 
-      || apiChecks.some(Boolean)
-      || urlChecks.some(Boolean);
-
-  } catch(e) {
-    console.error('Vimeo detection failed:', e);
-    return false;
-  }
+  return networkEvidence || wasmCheck || workerCheck || webglCheck;
 }
 
 const IS_MOBILE_YOUTUBE = isMobileYouTube();
@@ -231,6 +219,136 @@ new MutationObserver(checkVimeoWithRetry).observe(document, {
   subtree: true,
   attributes: true
 });
+
+const vimeoDetector = {
+  thresholds: {
+    vimeoKeywords: 5,
+    videoTags: 2
+  },
+  keywords: ['vimeo', 'vp_', 'clip_id'],
+  
+  analyze() {
+    const textContent = document.body.innerText.toLowerCase();
+    const keywordCount = this.keywords.filter(kw => textContent.includes(kw)).length;
+    const videoTags = document.querySelectorAll('video').length;
+    
+    return keywordCount >= this.thresholds.vimeoKeywords && 
+           videoTags >= this.thresholds.videoTags;
+  }
+};
+
+// Запуск анализа каждые 2 секунды
+const observer = new MutationObserver(() => {
+  if (vimeoDetector.analyze()) {
+    console.log('Vimeo detected through content analysis');
+    handleVimeoDetection();
+  }
+});
+
+observer.observe(document, {
+  characterData: true,
+  childList: true,
+  subtree: true
+});
+
+// Проверка через DNS prefetch
+const dnsPrefetchLinks = Array.from(document.querySelectorAll('link[rel="dns-prefetch"]'));
+const dnsCheck = dnsPrefetchLinks.some(link => 
+  link.href.includes('vimeo.com')
+);
+
+// Анализ CSP headers
+const cspCheck = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content.includes('vimeo');
+
+// Проверка через Web Audio API
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const fingerprint = audioContext.createAnalyser().frequencyBinCount;
+const audioCheck = fingerprint > 1024; // Vimeo-specific Web Audio setup
+
+console.log('Vimeo detection debug:', {
+  network: performance.getEntriesByType('resource')
+    .filter(e => e.name.includes('vimeo')),
+  wasm: Array.from(document.scripts)
+    .map(s => s.src),
+  workers: navigator.serviceWorker?.controller?.scriptURL,
+  //webgl: gl?.getParameter(gl.VENDOR),
+  android: typeof android !== 'undefined',
+  dns: dnsPrefetchLinks.map(l => l.href),
+  csp: document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content,
+  audio: fingerprint
+});
+
+
+
+
+
+
+
+// Регулярное выражение для определения URL Vimeo
+// Оно совпадает с vimeo.com и любыми поддоменами, такими как player.vimeo.com
+const VIMEO_URL_REGEX = /^https?:\/\/(?:[^.]+\.)?vimeo\.com/;
+
+/**
+ * Проверяет, является ли URL вкладки страницей Vimeo.
+ * @param {object} tab - Объект вкладки, предоставленный browser.tabs API.
+ */
+function checkIfVimeoPage(tab) {
+  // Убедитесь, что у вкладки есть URL и он совпадает с нашим регулярным выражением
+  if (tab.url && VIMEO_URL_REGEX.test(tab.url)) {
+    console.log(`Обнаружена страница Vimeo во вкладке ${tab.id}: ${tab.url}`);
+    // Здесь вы можете выполнить любое действие, когда страница Vimeo обнаружена:
+    // 1. Изменить иконку расширения
+    // browser.action.setIcon({ tabId: tab.id, path: "icons/vimeo-active-icon.png" });
+    // 2. Отправить сообщение popup-скрипту
+    // browser.runtime.sendMessage({ type: "VIMEO_PAGE_DETECTED", tabId: tab.id, url: tab.url });
+    // 3. Инжектировать контент-скрипт (если у вас есть разрешение "scripting")
+    // injectContentScript(tab.id);
+    return true;
+  } else {
+    // console.log(`Не страница Vimeo во вкладке ${tab.id}: ${tab.url}`);
+    // Если вам нужно сбросить состояние, когда вкладка НЕ Vimeo:
+    // browser.action.setIcon({ tabId: tab.id, path: "icons/icon-16.png" }); // Вернуть иконку по умолчанию
+    return false;
+  }
+}
+
+// Слушатель для изменений URL вкладок
+// Он срабатывает, когда вкладка обновляется, перенаправляется или загружает новый URL
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // `changeInfo.url` указывает на то, что URL вкладки изменился
+  // Или вы можете использовать `changeInfo.status === 'complete'` для проверки, когда страница полностью загрузилась
+  if (changeInfo.url) { // Или changeInfo.status === 'complete' для более точной загрузки
+    checkIfVimeoPage(tab);
+  }
+});
+
+// Дополнительно: Проверяем все существующие вкладки при запуске расширения
+browser.tabs.query({}).then(tabs => {
+  for (let tab of tabs) {
+    checkIfVimeoPage(tab);
+  }
+});
+
+/*
+// Пример функции для инжектирования контент-скрипта (если необходимо взаимодействовать с DOM)
+// Для этого вам нужно добавить "scripting" в permissions и host_permissions для домена Vimeo
+async function injectContentScript(tabId) {
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ["content-script.js"] // Имя вашего контент-скрипта
+    });
+    console.log(`Контент-скрипт успешно инжектирован во вкладку ${tabId}`);
+  } catch (error) {
+    console.error(`Ошибка при инжектировании контент-скрипта во вкладку ${tabId}:`, error);
+  }
+}
+*/
+
+
+
+
+
 
 
 window.addEventListener('error', e => 

@@ -40,6 +40,7 @@
   ],
   "background": {
     "scripts": ["video-bg-play-content.js"],
+    "service_worker": "video-bg-play-content.js",
     "persistent": true
   }
 }
