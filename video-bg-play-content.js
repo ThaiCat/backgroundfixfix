@@ -1,7 +1,9 @@
 'use strict';
 
-const IS_YOUTUBE = () =>
-{
+const IS_YOUTUBE = IsYoutube;
+
+function IsYoutube()
+{    
     const testyt = /(^|\.)(youtube|youtube-nocookie)\.(com|net|org|co\.[a-z]{2})$/i.test(location.hostname);
     console.log("testyt:", testyt);
     if (testyt) return true;
@@ -53,20 +55,47 @@ function isMobileYouTube() {
 }
 
 function isVimeo() {
-  // Проверка по домену и DOM-элементам
-  const isVimeoHost = /(^|\.)vimeo\.com$/i.test(location.hostname);
-  const vimeoPlayer = document.querySelector('#player video')?.src.includes('vimeo');
-  
-  // Проверка через мета-теги
-  const meta = document.querySelector('meta[property="og:site_name"]');
-  const isVimeoMeta = meta?.content.toLowerCase().includes('vimeo');
+  try {
+    // 1. Проверка домена
+    const vimeoHost = /(^|\.)vimeo\.com$/i.test(location.hostname);
+    console.log('Vimeo host check:', vimeoHost);
 
-  return isVimeoHost || !!vimeoPlayer || isVimeoMeta;
+    // 2. Проверка видеоплеера
+    const vimeoVideoElement = document.querySelector('#player video');
+    const vimeoSrcCheck = vimeoVideoElement?.src?.includes('vimeo') || false;
+    console.log('Vimeo video check:', {
+      elementFound: !!vimeoVideoElement,
+      srcCheck: vimeoSrcCheck
+    });
+
+    // 3. Проверка мета-данных
+    const metaElement = document.querySelector('meta[property="og:site_name"]');
+    const metaCheck = metaElement 
+      ? metaElement.content.toLowerCase().includes('vimeo') 
+      : false;
+    console.log('Vimeo meta check:', {
+      metaExists: !!metaElement,
+      content: metaElement?.content,
+      checkResult: metaCheck
+    });
+
+    // 4. Проверка специфичных классов Vimeo
+    const vimeoClasses = ['vp-preview', 'vp-player', 'js-player_container'];
+    const classCheck = vimeoClasses.some(c => document.getElementsByClassName(c).length > 0);
+    console.log('Vimeo class check:', classCheck);
+
+    // Итоговый результат
+    return vimeoHost || vimeoSrcCheck || metaCheck || classCheck;
+    
+  } catch (e) {
+    console.error('Vimeo detection error:', e);
+    return false;
+  }
 }
 
 const IS_MOBILE_YOUTUBE = isMobileYouTube();
 const IS_DESKTOP_YOUTUBE = IS_YOUTUBE && !IS_MOBILE_YOUTUBE;
-const IS_VIMEO = isVimeo();
+const IS_VIMEO = isVimeo;
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
 const ANDROID_YOUTUBE_CLASSES = [
@@ -88,7 +117,7 @@ console.log('isAndroidYoutube:', isAndroidYoutube);
 console.log('isAndroidYoutube():', isAndroidYoutube());
 
 console.log('IS_VIMEO:', IS_VIMEO);
-//console.log('IS_VIMEO():', IS_VIMEO());
+console.log('IS_VIMEO():', IS_VIMEO());
 
 function overrideVisibilityAPI()
 {
