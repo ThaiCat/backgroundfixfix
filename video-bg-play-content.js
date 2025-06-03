@@ -54,36 +54,8 @@ function isMobileYouTube() {
   ].some(Boolean);
 }
 
-function isVimeo() {
-  // 1. Проверка network-запросов
-  const networkEvidence = performance.getEntriesByType('resource').some(entry => 
-    entry.name.includes('player.vimeo.com') || 
-    entry.initiatorType === 'xmlhttprequest' && entry.name.includes('/vimeo/')
-  );
-
-  // 2. Проверка через WebAssembly (новые плееры Vimeo)
-  const wasmCheck = Array.from(document.scripts).some(script => 
-    script.src.includes('vimeo.com/wasm/')
-  );
-
-  // 3. Анализ Web Workers
-  const workerCheck = Array.from(navigator.serviceWorker?.controller?.scriptURL || []).some(url => 
-    url.includes('vimeo.com/sw.js')
-  );
-
-  // 4. Проверка WebGL (рендеринг видео)
-  const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl');
-  const webglCheck = gl ? 
-    gl.getParameter(gl.VENDOR).includes('Vimeo') : 
-    false;
-
-  return networkEvidence || wasmCheck || workerCheck || webglCheck;
-}
-
 const IS_MOBILE_YOUTUBE = isMobileYouTube();
 const IS_DESKTOP_YOUTUBE = IS_YOUTUBE && !IS_MOBILE_YOUTUBE;
-const IS_VIMEO = isVimeo;
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
 const ANDROID_YOUTUBE_CLASSES = [
@@ -103,9 +75,6 @@ console.log('IS_MOBILE_YOUTUBE:', IS_MOBILE_YOUTUBE);
 console.log('IS_ANDROID:', IS_ANDROID);
 console.log('isAndroidYoutube:', isAndroidYoutube);
 console.log('isAndroidYoutube():', isAndroidYoutube());
-
-console.log('IS_VIMEO:', IS_VIMEO);
-console.log('IS_VIMEO():', IS_VIMEO());
 
 function overrideVisibilityAPI()
 {
@@ -188,113 +157,11 @@ function init()
         {
 
         }
-    });
-    
-    
-    //)
-    // Fullscreen API
-    //if (IS_VIMEO)
-    //{
-    //    window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
-    //}
+    });    
 }
 
 // Запускаем проверку при загрузке и при изменениях DOM
 init();
-
-// Проверка после полной загрузки страницы
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Vimeo detected:', isVimeo());
-  console.log('Mobile YouTube:', isMobileYouTube());
-});
-
-// Для SPA (YouTube/Vimeo)
-new MutationObserver(() => {
-  console.log('Dynamic update - Vimeo:', isVimeo());
-  console.log('Dynamic update - Mobile YouTube:', isMobileYouTube());
-}).observe(document, {
-  subtree: true,
-  childList: true,
-  attributes: true
-});
-
-
-let vimeoCheckAttempts = 0;
-const maxAttempts = 5;
-
-function checkVimeoWithRetry() {
-  if(isVimeo() || vimeoCheckAttempts >= maxAttempts) return;
-  
-  vimeoCheckAttempts++;
-  setTimeout(checkVimeoWithRetry, 1500);
-}
-
-// Запуск при любых изменениях DOM
-new MutationObserver(checkVimeoWithRetry).observe(document, {
-  childList: true,
-  subtree: true,
-  attributes: true
-});
-
-const vimeoDetector = {
-  thresholds: {
-    vimeoKeywords: 5,
-    videoTags: 2
-  },
-  keywords: ['vimeo', 'vp_', 'clip_id'],
-  
-  analyze() {
-    const textContent = document.body.innerText.toLowerCase();
-    const keywordCount = this.keywords.filter(kw => textContent.includes(kw)).length;
-    const videoTags = document.querySelectorAll('video').length;
-    
-    return keywordCount >= this.thresholds.vimeoKeywords && 
-           videoTags >= this.thresholds.videoTags;
-  }
-};
-
-// Запуск анализа каждые 2 секунды
-const observer = new MutationObserver(() => {
-  if (vimeoDetector.analyze()) {
-    console.log('Vimeo detected through content analysis');
-    handleVimeoDetection();
-  }
-});
-
-observer.observe(document, {
-  characterData: true,
-  childList: true,
-  subtree: true
-});
-
-// Проверка через DNS prefetch
-const dnsPrefetchLinks = Array.from(document.querySelectorAll('link[rel="dns-prefetch"]'));
-const dnsCheck = dnsPrefetchLinks.some(link => 
-  link.href.includes('vimeo.com')
-);
-
-// Анализ CSP headers
-const cspCheck = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content.includes('vimeo');
-
-// Проверка через Web Audio API
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const fingerprint = audioContext.createAnalyser().frequencyBinCount;
-const audioCheck = fingerprint > 1024; // Vimeo-specific Web Audio setup
-
-console.log('Vimeo detection debug:', {
-  network: performance.getEntriesByType('resource')
-    .filter(e => e.name.includes('vimeo')),
-  wasm: Array.from(document.scripts)
-    .map(s => s.src),
-  workers: navigator.serviceWorker?.controller?.scriptURL,
-  //webgl: gl?.getParameter(gl.VENDOR),
-  android: typeof android !== 'undefined',
-  dns: dnsPrefetchLinks.map(l => l.href),
-  csp: document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content,
-  audio: fingerprint
-});
-
-
 
 
 
@@ -302,6 +169,10 @@ console.log('Vimeo detection debug:', {
 
 // Регулярное выражение для определения URL Vimeo
 const VIMEO_URL_REGEX = /^https?:\/\/(?:[^.]+\.)?vimeo\.com/;
+
+// Регулярное выражение для определения URL YouTube (включает поддомены типа m.youtube.com, music.youtube.com и т.д.)
+// а также основной домен youtube.com
+const YOUTUBE_URL_REGEX = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)?(?:youtube\.com|youtu\.be)/;
 
 /**
  * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей Vimeo,
@@ -323,12 +194,32 @@ async function isCurrentTabVimeo() {
       // Проверяем URL этой вкладки
       return currentTab.url && VIMEO_URL_REGEX.test(currentTab.url);
     }
-  } catch (error) {
-    console.error("[isCurrentTabVimeo] Ошибка при получении текущей вкладки:", error);
+  } catch (e) {
+    console.log("[isCurrentTabVimeo] exception ignored");
     // В случае ошибки предполагаем, что это не Vimeo
     return false;
   }
   // Если вкладок не найдено или что-то пошло не так
+  return false;
+}
+
+
+/**
+ * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей YouTube (или мобильным YouTube),
+ * иначе возвращает false.
+ * @returns {Promise<boolean>} Промис, который разрешается в true, если текущая активная вкладка - YouTube, иначе false.
+ */
+async function isCurrentTabYouTube() {
+  try {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs.length > 0) {
+      const currentTab = tabs[0];
+      return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
+    }
+  } catch (e) {
+    console.error("[isCurrentTabYouTube] youtube tab exception ignored");
+    return false;
+  }
   return false;
 }
 
@@ -337,10 +228,10 @@ async function isCurrentTabVimeo() {
 // 1. Слушатель для переключения вкладок
 browser.tabs.onActivated.addListener(async (activeInfo) => {
   if (await isCurrentTabVimeo()) { // Используем await, так как isCurrentTabVimeo() возвращает Promise
-    console.log(`[Event: onActivated] Текущая активная вкладка является Vimeo! Tab ID: ${activeInfo.tabId}`);
+    console.log(`[Event: onActivated] current tab is Vimeo! Tab ID: ${activeInfo.tabId}`);
     // Например: browser.action.setIcon({ tabId: activeInfo.tabId, path: "icons/vimeo-active-icon.png" });
   } else {
-    console.log(`[Event: onActivated] Текущая активная вкладка НЕ является Vimeo. Tab ID: ${activeInfo.tabId}`);
+    console.log(`[Event: onActivated] current tab is NOT Vimeo. Tab ID: ${activeInfo.tabId}`);
     // Например: browser.action.setIcon({ tabId: activeInfo.tabId, path: "icons/icon-16.png" });
   }
 });
@@ -350,10 +241,10 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // Убеждаемся, что это активная вкладка и что URL изменился или страница полностью загрузилась
   if (tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
     if (await isCurrentTabVimeo()) { // Используем await
-      console.log(`[Event: onUpdated] Текущая активная вкладка является Vimeo! Tab ID: ${tabId}`);
+      console.log(`[Event: onUpdated] current tab is Vimeo! Tab ID: ${tabId}`);
       // Например: browser.action.setIcon({ tabId: tabId, path: "icons/vimeo-active-icon.png" });
     } else {
-      console.log(`[Event: onUpdated] Текущая активная вкладка НЕ является Vimeo. Tab ID: ${tabId}`);
+      console.log(`[Event: onUpdated] current tab is NOT Vimeo. Tab ID: ${tabId}`);
       // Например: browser.action.setIcon({ tabId: tabId, path: "icons/icon-16.png" });
     }
   }
@@ -364,12 +255,12 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 // чтобы можно было использовать await на верхнем уровне
 (async () => {
   if (await isCurrentTabVimeo()) { // Используем await
-    console.log("[Initial Check] Vimeo обнаружен при запуске расширения.");
+    console.log("[Initial Check] current tab is vimeo.");
     // Например: Здесь можно получить текущую активную вкладку и установить иконку
     // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     // if (tabs[0]) browser.action.setIcon({ tabId: tabs[0].id, path: "icons/vimeo-active-icon.png" });
   } else {
-    console.log("[Initial Check] При запуске расширения текущая вкладка НЕ Vimeo.");
+    console.log("[Initial Check] current tab is not vimeo.");
     // Например:
     // const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     // if (tabs[0]) browser.action.setIcon({ tabId: tabs[0].id, path: "icons/icon-16.png" });
