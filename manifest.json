@@ -1,12 +1,12 @@
 {
   "manifest_version": 2,
-  "name": "__MSG_extensionName__",
+  "name": "Background_FixFix",
   "default_locale": "en",
   "version": "1.0.0",
-  "description": "__MSG_extensionDescription__",
+  "description": "Play back videos in background even if a page doesn't want you to. Works on android 15",
   "icons": {
-    "48": "icon.svg",
-    "96": "icon.svg"
+    "48": "icon.png"
+    "96": "icon.png"
   },
   "applications": {
     "gecko": {
