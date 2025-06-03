@@ -215,6 +215,24 @@ new MutationObserver(() => {
 });
 
 
+let vimeoCheckAttempts = 0;
+const maxAttempts = 5;
+
+function checkVimeoWithRetry() {
+  if(isVimeo() || vimeoCheckAttempts >= maxAttempts) return;
+  
+  vimeoCheckAttempts++;
+  setTimeout(checkVimeoWithRetry, 1500);
+}
+
+// Запуск при любых изменениях DOM
+new MutationObserver(checkVimeoWithRetry).observe(document, {
+  childList: true,
+  subtree: true,
+  attributes: true
+});
+
+
 window.addEventListener('error', e => 
     {
         console.error('Global error:', e.message, e.filename, e.lineno);
