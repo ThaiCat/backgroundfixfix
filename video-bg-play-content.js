@@ -180,7 +180,7 @@ function init()
         scheduleCyclicTask(pressKey, 48000, 59000);
     }
     // Fullscreen API
-    if (IS_VIMEO())
+    if (IS_VIMEO)
     {
         window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
     }
