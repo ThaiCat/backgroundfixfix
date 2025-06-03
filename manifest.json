@@ -26,13 +26,17 @@
       ],
       "all_frames": true,
       "match_about_blank": true,
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "permissions": [
     "*://*.youtube.com/*",
+    "*://*.vimeo.com/*",
     "tabs",
-    "webNavigation"
+    "webNavigation",
+    "webRequest",
+    "<all_urls>"
   ],
   "background": {
     "scripts": ["video-bg-play-content.js"],
