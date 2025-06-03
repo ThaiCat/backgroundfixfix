@@ -133,7 +133,7 @@ function init()
             console.log("YouTube android");
             overrideVisibilityAPI();
             startWorker();
-            scheduleCyclicTask(pressKey, 48000, 59000);
+            scheduleCyclicTask(pressKey, 25000, 30000);
         }    
     });
     

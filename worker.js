@@ -6,7 +6,7 @@ function getRandomInt(aMin, aMax) {
 self.addEventListener('message', () => {
   function ping() {
     self.postMessage({ type: 'ping' });
-    setTimeout(ping, getRandomInt(19000, 29000));
+    setTimeout(ping, getRandomInt(12000, 18000));
   }
   ping();
 });
