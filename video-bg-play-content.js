@@ -128,21 +128,24 @@ async function isCurrentTabYouTube() {
 // Функция для обработки изменения статуса вкладки (Vimeo/YouTube/Other)
 async function handleTabStatusChange() {
     const isVimeo = await isCurrentTabVimeo();
-    const isYouTube = await isCurrentTabYouTube();
+    //const isYouTube = await isCurrentTabYouTube();
     
-    
-    if (isYouTube) 
+    isCurrentTabYouTube().then(isYouTube => 
     {
-        IS_YOUTUBE = true;
-        console.log("CurrentTab: YouTube");
-        if(IS_ANDROID)
+        if (isYouTube)
         {
-            overrideVisibilityAPI();
-            startWorker();
-            scheduleCyclicTask(pressKey, 48000, 59000);
+            IS_YOUTUBE = true;
+            console.log("CurrentTab: YouTube");
+            if(IS_ANDROID)
+            {
+                overrideVisibilityAPI();
+                startWorker();
+                scheduleCyclicTask(pressKey, 48000, 59000);
+            }
         }
-    } 
-    else if (isVimeo) 
+    });
+
+    if (isVimeo) 
     {
         console.log("CurrentTab: Vimeo");        
         if(isVimeoPage)
