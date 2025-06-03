@@ -1,80 +1,11 @@
 'use strict';
 
-const IS_YOUTUBE = IsYoutube;
-
-function IsYoutube()
-{    
-    const testyt = /(^|\.)(youtube|youtube-nocookie)\.(com|net|org|co\.[a-z]{2})$/i.test(location.hostname);
-    console.log("testyt:", testyt);
-    if (testyt) return true;
-    // Проверка уникальных элементов YouTube
-    if (document.querySelector('ytd-app, #player, ytm-mobile-page')) return true;
-    
-    // Проверка по мета-тегам
-    const meta = document.querySelector('meta[property="og:site_name"]');
-    return meta && meta.content.toLowerCase().includes('youtube');
-}
-
-function isMobileYouTube() {
-  // 1. Проверка по URL
-  if (location.hostname.startsWith('m.') || location.hostname === 'youtube.com') {
-    const path = location.pathname;
-    if (path.startsWith('/watch') || path.startsWith('/shorts')) return true;
-  }
-
-  // 2. Проверка мобильных классов
-  const mobileClasses = [
-    'ytm-pivot-bar',      // Панель навигации
-    'ytm-slim-page',      // Верстка мобильной версии
-    'ytm-player-container'// Контейнер плеера
-  ];
-  
-  // 3. Проверка мобильных атрибутов
-  const mobileAttributes = {
-    'data-is-mobile': 'true',
-    'ytm-version': /\d+/,
-    'is-mobile-app': null
-  };
-
-  return [
-    // Проверка классов
-    mobileClasses.some(c => document.getElementsByClassName(c).length > 0),
-    
-    // Проверка атрибутов
-    Object.entries(mobileAttributes).some(([attr, val]) => {
-      const element = document.querySelector(`[${attr}]`);
-      if (!element) return false;
-      return val instanceof RegExp 
-        ? val.test(element.getAttribute(attr))
-        : element.hasAttribute(attr);
-    }),
-    
-    // Проверка через user-agent (резервный метод)
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  ].some(Boolean);
-}
-
-const IS_MOBILE_YOUTUBE = isMobileYouTube();
-const IS_DESKTOP_YOUTUBE = IS_YOUTUBE && !IS_MOBILE_YOUTUBE;
-
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
-const ANDROID_YOUTUBE_CLASSES = [
-  'ytm-pivot-bar', 
-  'ytm-slim-page',
-  'ytm-player-container'
-];
-
-const isAndroidYoutube = () => ANDROID_YOUTUBE_CLASSES.some(c => document.getElementsByClassName(c).length > 0);
 
 console.log('User Agent:', navigator.userAgent);
 console.log('Hostname:', location.hostname);
-console.log('IS_YOUTUBE:', IS_YOUTUBE);
-console.log('IS_YOUTUBE():', IS_YOUTUBE());
-console.log('IS_DESKTOP_YOUTUBE:', IS_DESKTOP_YOUTUBE);
-console.log('IS_MOBILE_YOUTUBE:', IS_MOBILE_YOUTUBE);
 console.log('IS_ANDROID:', IS_ANDROID);
-console.log('isAndroidYoutube:', isAndroidYoutube);
-console.log('isAndroidYoutube():', isAndroidYoutube());
+
 
 function overrideVisibilityAPI()
 {
@@ -132,40 +63,6 @@ function simulateActivity() {
     console.error('Activity simulation failed:', e);
   }
 }
-
-/*
-function init() 
-{
-    console.log('init');
-    if (IS_ANDROID || !IS_DESKTOP_YOUTUBE || IS_YOUTUBE() || isAndroidYoutube())
-    {
-        console.log('Initializing YouTube background playback');
-        
-        // Ваша основная логика
-        overrideVisibilityAPI();
-        startWorker();
-        scheduleCyclicTask(pressKey, 48000, 59000);
-    }
-
-    isCurrentTabVimeo().then(isVimeoPage =>
-    {
-        console.log('isVimeoPage', isVimeoPage);
-        if(isVimeoPage)
-        {
-            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
-        }
-        else
-        {
-
-        }
-    });    
-}
-
-// Запускаем проверку при загрузке и при изменениях DOM
-init();
-
-*/
-
 
 
 // Регулярное выражение для определения URL Vimeo
@@ -231,8 +128,19 @@ async function isCurrentTabYouTube() {
 async function handleTabStatusChange() {
     const isVimeo = await isCurrentTabVimeo();
     const isYouTube = await isCurrentTabYouTube();
-
-    if (isVimeo) 
+    
+    
+    if (isYouTube) 
+    {
+        console.log("CurrentTab: YouTube");
+        if(IS_ANDROID)
+        {
+            overrideVisibilityAPI();
+            startWorker();
+            scheduleCyclicTask(pressKey, 48000, 59000);
+        }
+    } 
+    else if (isVimeo) 
     {
         console.log("CurrentTab: Vimeo");        
         if(isVimeoPage)
@@ -243,15 +151,7 @@ async function handleTabStatusChange() {
         {
 
         }
-    } 
-    else if (isYouTube) 
-    {
-        console.log("CurrentTab: YouTube");
-
-        overrideVisibilityAPI();
-        startWorker();
-        scheduleCyclicTask(pressKey, 48000, 59000);
-    } 
+    }     
     else 
     {
         console.log("CurrentTab: other");
