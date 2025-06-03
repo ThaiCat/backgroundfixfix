@@ -1,7 +1,7 @@
 'use strict';
 
 const IS_ANDROID = window.navigator.userAgent.indexOf('Android') > -1;
-const IS_YOUTUBE = false;
+let IS_YOUTUBE = false;
 
 console.log('User Agent:', navigator.userAgent);
 console.log('Hostname:', location.hostname);
@@ -116,7 +116,7 @@ async function isCurrentTabYouTube() {
       return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
     }
   } catch (e) {
-    console.error("[isCurrentTabYouTube] youtube tab exception ignored");
+    console.log("[isCurrentTabYouTube] youtube tab exception ignored");
     return false;
   }
   return false;
