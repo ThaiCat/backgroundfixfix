@@ -97,7 +97,7 @@ async function init()
             overrideVisibilityAPI();
             startWorker();
 
-            console.log("tabId", tabId , "_currentTab",_currentTab );
+            console.log("_currentTab", _currentTab);
 
             if(_currentTab)
             {
