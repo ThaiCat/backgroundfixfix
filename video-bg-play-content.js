@@ -87,16 +87,15 @@ function init()
 {
     isCurrentTabYouTube().then(isYouTube =>
     {    
-        IS_YOUTUBE = true;
+        IS_YOUTUBE = isYouTube;
         console.log("Check for youtube");
         if(IS_ANDROID)
         {
-            console.log("YouTube android");
+            console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
             overrideVisibilityAPI();
+            
+            // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
-            //preventClose();
-            //startWorker();
-            //scheduleCyclicTask(pressKey, 25000, 30000);
         }    
     });
     
@@ -105,6 +104,7 @@ function init()
         console.log("Check for vimeo");        
         if(isVimeo)
         {
+            console.log("isVimeo:",isVimeo);
             window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
         }  
     });
@@ -187,8 +187,9 @@ async function handleTabStatusChange() {
     const isVimeo = await isCurrentTabVimeo();
     const isYouTube = await isCurrentTabYouTube();
     
+    /*
     console.log("isVimeo", isVimeo);
-    console.log("isYouTube", isYouTube);
+    console.log("isYouTube", isYouTube);*/
 }
 
 
@@ -206,12 +207,13 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 });
 
+/*
 // 3. Начальная проверка при запуске расширения
 (async () => {
   console.log("[Initial Check]");
   await handleTabStatusChange();
 })();
-
+*/
 
 
 
