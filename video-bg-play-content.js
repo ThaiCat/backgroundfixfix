@@ -91,10 +91,9 @@ async function init()
     console.log("init");
     {    
         IS_YOUTUBE = isYouTube;
-        console.log("Check for youtube");
+        console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
         if(IS_YOUTUBE || IS_ANDROID)
         {
-            console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
             overrideVisibilityAPI();
             startWorker();
 
@@ -110,12 +109,11 @@ async function init()
         }
     }
     
-    isCurrentTabVimeo().then(isVimeo =>
-    {    
-        console.log("Check for vimeo");        
+    let isVimeo =  isCurrentTabVimeo()
+    {
+        console.log("isVimeo:",isVimeo);     
         if(isVimeo)
         {
-            console.log("isVimeo:",isVimeo);
             window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
         }  
     });
