@@ -36,11 +36,13 @@
     "tabs",
     "webNavigation",
     "webRequest",
+    "scripting",
     "<all_urls>"
   ],
   "background": {
     "scripts": ["video-bg-play-content.js"],
     "service_worker": "video-bg-play-content.js",
     "persistent": true
-  }
+  },
+  "web_accessible_resources": ["worker.js"]
 }
