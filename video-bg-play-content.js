@@ -71,17 +71,21 @@ let _currentTab = null;
  * @returns {Promise<boolean>} Промис, который разрешается в true, если текущая активная вкладка - YouTube, иначе false.
  */
 async function isCurrentTabYouTube() {
-  try {
+  //try {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    if (tabs && tabs.length > 0) {
+    
+      console.log("tabs " ,tabs);
+    if (tabs && tabs.length > 0) 
+    {
       const currentTab = tabs[0];
+      console.log("currentTab " ,currentTab);
       _currentTab = currentTab;
       return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
     }
-  } catch (e) {
-    console.log("[isCurrentTabYouTube] youtube tab exception ignored");
-    return false;
-  }
+  //} catch (e) {
+  //  console.log("[isCurrentTabYouTube] youtube tab exception ignored");
+  //  return false;
+  //}
   return false;
 }
 
@@ -100,6 +104,7 @@ async function init()
 
             console.log("tabId", tabId , "_currentTab",_currentTab );
 
+            if(_currentTab)
             startKeepingTabAlive(_currentTab.id);
             
             // Первый запуск
@@ -292,27 +297,23 @@ const activeKeepAliveTabs = new Set();
  */
 async function startKeepingTabAlive(tabId) {
     if (activeKeepAliveTabs.has(tabId)) {
-        console.log(`[Background] Keep-alive уже активен для вкладки ${tabId}. Отправляем повторную команду.`);
-        // Отправляем команду еще раз, на случай если контент-скрипт был выгружен или его состояние сбросилось.
-        browser.tabs.sendMessage(tabId, { type: "START_KEEP_ALIVE" }).catch(e => console.warn(`[Background] Ошибка отправки START для ${tabId}:`, e));
+        console.log(`[startKeepingTabAlive] Keep-alive is already active for tab ${tabId}. Resending command.`);
+        browser.tabs.sendMessage(tabId, { type: "START_KEEP_ALIVE" }).catch(e => console.warn(`[Background] Error sending START command to ${tabId}:`, e));
         return;
     }
 
     try {
-        // Инжектируем скрипт. Если он уже инжектирован, Firefox это обработает.
-        // `executeScript` может возвращать результат, но нам он здесь не нужен.
         await browser.scripting.executeScript({
             target: { tabId: tabId },
             files: ["keep_alive.js"]
         });
-        console.log(`[Background] Контент-скрипт keep_alive.js инжектирован во вкладку ${tabId}.`);
+        console.log(`[startKeepingTabAlive] Content script keep_alive.js injected into tab ${tabId}.`);
 
-        // Отправляем сообщение контент-скрипту, чтобы он начал свою работу
         await browser.tabs.sendMessage(tabId, { type: "START_KEEP_ALIVE" });
         activeKeepAliveTabs.add(tabId);
-        console.log(`[Background] Отправлена команда START_KEEP_ALIVE для вкладки ${tabId}.`);
+        console.log(`[startKeepingTabAlive] START_KEEP_ALIVE command sent to tab ${tabId}.`);
     } catch (error) {
-        console.error(`[Background] Ошибка при инжектировании/запуске keep-alive для вкладки ${tabId}:`, error);
+        console.error(`[startKeepingTabAlive] Error injecting/starting keep-alive for tab ${tabId}:`, error);
     }
 }
 
@@ -322,19 +323,18 @@ async function startKeepingTabAlive(tabId) {
  */
 async function stopKeepingTabAlive(tabId) {
     if (!activeKeepAliveTabs.has(tabId)) {
-        console.log(`[Background] Keep-alive неактивен для вкладки ${tabId}, нет необходимости останавливать.`);
+        console.log(`[Background] Keep-alive is inactive for tab ${tabId}, no need to stop.`);
         return;
     }
 
     try {
-        // Отправляем сообщение контент-скрипту, чтобы он остановил свою работу
         await browser.tabs.sendMessage(tabId, { type: "STOP_KEEP_ALIVE" });
         activeKeepAliveTabs.delete(tabId);
-        console.log(`[Background] Отправлена команда STOP_KEEP_ALIVE для вкладки ${tabId}.`);
+        console.log(`[Background] STOP_KEEP_ALIVE command sent to tab ${tabId}.`);
     } catch (error) {
         // Если контент-скрипт уже неактивен (например, вкладка была выгружена/закрыта),
         // sendMessage может выбросить ошибку. Это нормально.
-        console.warn(`[Background] Ошибка отправки STOP_KEEP_ALIVE для вкладки ${tabId} (возможно, уже неактивна):`, error);
+        console.warn(`[Background] Error sending STOP_KEEP_ALIVE to tab ${tabId} (likely already inactive):`, error);
         activeKeepAliveTabs.delete(tabId); // Удаляем из нашего списка на всякий случай
     }
 }
