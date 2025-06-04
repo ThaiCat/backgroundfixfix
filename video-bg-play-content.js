@@ -64,31 +64,6 @@ async function isCurrentTabVimeo() {
   return false;
 }
 
-/**
- * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей YouTube (или мобильным YouTube),
- * иначе возвращает false.
- * @returns {Promise<boolean>} Промис, который разрешается в true, если текущая активная вкладка - YouTube, иначе false.
- */
-async function isCurrentTabYouTube() {
-  try {
-      
-        console.log('try'); // Лог для отладки
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-     console.log('query'); // Лог для отладки
-    if (tabs && tabs.length > 0) {
-        console.log('Tabs found:', tabs); // Лог для отладки
-      const currentTab = tabs[0];
-      _currentTab = currentTab;
-      console.log('_currentTab set to:', _currentTab); // Лог присваивания
-      return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
-    }
-  } catch (e) {
-    console.log("[isCurrentTabYouTube] youtube tab exception ignored");
-    return false;
-  }
-  return false;
-}
-
 
 function logTabs(tabs)
 {  // tabs[0].url requires the `tabs` permission or a matching host permission.
@@ -101,39 +76,26 @@ function onError(error)
 
 function isCurrentTabYouTube() 
 {
-    try
+    return browser.tabs.query({ active: true, currentWindow: true }).then(tabs => 
     {
-        console.log('try'); // Лог для отладки
-        //const tabs = await
-        // browser.tabs.query({ active: true, currentWindow: true }).then(logTabs, onError);
-       browser.tabs.query({ active: true, currentWindow: true }).then(tabs => 
-       {
-           console.log("tabs:", tabs);
-           if (tabs && tabs.length > 0)
-           {
-               console.log('Tabs found:', tabs); // Лог для отладки
-               const currentTab = tabs[0];
-               _currentTab = currentTab;
-               console.log('_currentTab set to:', _currentTab); // Лог присваивания
-               return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
-           }
-           return false;
-       })
-       .catch(error => 
-       {
-           console.log("[isCurrentTabYouTube] youtube tab exception ignored");
-           return false;
-       });
-
         console.log("tabs:", tabs);
-        console.log('query'); // Лог для отладки
-    }
-    catch (e)
-    {
-        console.log("[isCurrentTabYouTube] youtube tab exception ignored");
+        if (tabs && tabs.length > 0)
+        {
+            console.log('Tabs found:', tabs); // Лог для отладки
+            const currentTab = tabs[0];
+            _currentTab = currentTab;
+            console.log('_currentTab set to:', _currentTab); // Лог присваивания
+            
+            console.log("currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url) ", currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url));
+            return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
+        }
         return false;
-    }
-    return false;
+    })
+    .catch(error =>
+    {
+        console.log("[isCurrentTabYouTube] 1e", error);
+        return false;
+    });
 }
 
 
@@ -367,7 +329,6 @@ async function stopKeepingTabAlive(tabId) {
 function init()
 {
     console.log("init");
-    //isCurrentTabYouTube().then(isYouTube =>
     let isYouTube = isCurrentTabYouTube();
     {    
         IS_YOUTUBE = isYouTube;
