@@ -51,6 +51,7 @@ async function isCurrentTabVimeo() {
     // Если нашли активную вкладку
     if (tabs && tabs.length > 0) {
       const currentTab = tabs[0];
+      _currentTab = currentTab;
       // Проверяем URL этой вкладки
       return currentTab.url && VIMEO_URL_REGEX.test(currentTab.url);
     }
@@ -63,7 +64,7 @@ async function isCurrentTabVimeo() {
   return false;
 }
 
-
+let _currentTab = null;
 /**
  * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей YouTube (или мобильным YouTube),
  * иначе возвращает false.
@@ -74,6 +75,7 @@ async function isCurrentTabYouTube() {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     if (tabs && tabs.length > 0) {
       const currentTab = tabs[0];
+      _currentTab = currentTab;
       return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
     }
   } catch (e) {
@@ -95,6 +97,10 @@ function init()
             console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
             overrideVisibilityAPI();
             startWorker();
+
+            console.log("tabId", tabId , "_currentTab",_currentTab );
+
+            startKeepingTabAlive(_currentTab.id);
             
             // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
@@ -275,4 +281,60 @@ window.addEventListener('error', e =>
 function getRandomInt(aMin, aMax) 
 {
   return Math.floor(Math.random() * (aMax - aMin)) + aMin;
+}
+
+// Используем Set для отслеживания tabId, в которых запущен keep_alive скрипт.
+// Это поможет избежать повторного инжектирования и управлять остановкой.
+const activeKeepAliveTabs = new Set();
+/**
+ * Инжектирует keep_alive.js в указанную вкладку и отправляет команду START_KEEP_ALIVE.
+ * @param {number} tabId
+ */
+async function startKeepingTabAlive(tabId) {
+    if (activeKeepAliveTabs.has(tabId)) {
+        console.log(`[Background] Keep-alive уже активен для вкладки ${tabId}. Отправляем повторную команду.`);
+        // Отправляем команду еще раз, на случай если контент-скрипт был выгружен или его состояние сбросилось.
+        browser.tabs.sendMessage(tabId, { type: "START_KEEP_ALIVE" }).catch(e => console.warn(`[Background] Ошибка отправки START для ${tabId}:`, e));
+        return;
+    }
+
+    try {
+        // Инжектируем скрипт. Если он уже инжектирован, Firefox это обработает.
+        // `executeScript` может возвращать результат, но нам он здесь не нужен.
+        await browser.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ["keep_alive.js"]
+        });
+        console.log(`[Background] Контент-скрипт keep_alive.js инжектирован во вкладку ${tabId}.`);
+
+        // Отправляем сообщение контент-скрипту, чтобы он начал свою работу
+        await browser.tabs.sendMessage(tabId, { type: "START_KEEP_ALIVE" });
+        activeKeepAliveTabs.add(tabId);
+        console.log(`[Background] Отправлена команда START_KEEP_ALIVE для вкладки ${tabId}.`);
+    } catch (error) {
+        console.error(`[Background] Ошибка при инжектировании/запуске keep-alive для вкладки ${tabId}:`, error);
+    }
+}
+
+/**
+ * Отправляет команду STOP_KEEP_ALIVE контент-скрипту в указанной вкладке.
+ * @param {number} tabId
+ */
+async function stopKeepingTabAlive(tabId) {
+    if (!activeKeepAliveTabs.has(tabId)) {
+        console.log(`[Background] Keep-alive неактивен для вкладки ${tabId}, нет необходимости останавливать.`);
+        return;
+    }
+
+    try {
+        // Отправляем сообщение контент-скрипту, чтобы он остановил свою работу
+        await browser.tabs.sendMessage(tabId, { type: "STOP_KEEP_ALIVE" });
+        activeKeepAliveTabs.delete(tabId);
+        console.log(`[Background] Отправлена команда STOP_KEEP_ALIVE для вкладки ${tabId}.`);
+    } catch (error) {
+        // Если контент-скрипт уже неактивен (например, вкладка была выгружена/закрыта),
+        // sendMessage может выбросить ошибку. Это нормально.
+        console.warn(`[Background] Ошибка отправки STOP_KEEP_ALIVE для вкладки ${tabId} (возможно, уже неактивна):`, error);
+        activeKeepAliveTabs.delete(tabId); // Удаляем из нашего списка на всякий случай
+    }
 }
