@@ -27,45 +27,6 @@ function overrideVisibilityAPI()
     console.log(`Page Visibility API`);
 }
 
-function startWorker()
-{
-  console.log('Starting Web Worker');
-  
-  const worker = new Worker('worker.js');
-  
-  worker.onmessage = (e) => {
-    if (e.data.type === 'ping') {
-      console.log('Worker ping received');
-      
-      // Имитируем активность в основном потоке
-      simulateActivity();
-      document.dispatchEvent(new Event('keepAlive'));
-    }
-  };
-
-  worker.postMessage('start');
-}
-
-function simulateActivity() {
-  try {
-    console.log('Simulating activity');
-    
-    // Имитация пользовательской активности
-    const events = ['mousemove', 'keydown', 'scroll'];
-    events.forEach(event => {
-      document.dispatchEvent(new Event(event, { bubbles: true }));
-    });
-    
-    // Дополнительная активность для YouTube
-    if (IS_YOUTUBE) {
-      document.querySelector('video')?.play();
-    }
-  } catch (e) {
-    console.error('Activity simulation failed:', e);
-  }
-}
-
-
 // Регулярное выражение для определения URL Vimeo
 const VIMEO_URL_REGEX = /^https?:\/\/(?:[^.]+\.)?vimeo\.com/;
 
@@ -132,6 +93,7 @@ function init()
         {
             console.log("YouTube android");
             overrideVisibilityAPI();
+            setTimeout(simulateActivityCycle, getMainDelay());
             //preventClose();
             //startWorker();
             //scheduleCyclicTask(pressKey, 25000, 30000);
@@ -261,66 +223,6 @@ window.addEventListener('error', e =>
     }
 );
 
-
-function pressKey() 
-{
-    try
-    {
-        // ...код ...    
-        const keyCodes = [18];
-        let key = keyCodes[getRandomInt(0, keyCodes.length)];
-        sendKeyEvent("keydown", key);
-        sendKeyEvent("keyup", key);
-        
-        console.log(`pressKey executed at ${Date.now()}`);
-    }
-    catch (e)
-    {
-        console.error('pressKey error:', e);
-    }
-    console.log(`pressKey`);
-}
-
-function sendKeyEvent (aEvent, aKey)
-{
-    document.dispatchEvent(new KeyboardEvent(aEvent, 
-    {
-        bubbles: true,
-        cancelable: true,
-        keyCode: aKey,
-        which: aKey,
-    }));
-}
-
-/**
- * Циклически выполняет callback со случайной задержкой между вызовами
- * @param {Function} callback - Функция для выполнения
- * @param {number} minDelayMs - Минимальная задержка (миллисекунды)
- * @param {number} maxDelayMs - Максимальная задержка (миллисекунды)
- */
-function scheduleCyclicTask(callback, minDelayMs, maxDelayMs) {
-  // Валидация параметров
-  if (minDelayMs < 0 || maxDelayMs < minDelayMs) {
-    throw new Error('Invalid delay parameters');
-  }
-
-  // Генерация случайной задержки в заданном диапазоне
-  const getRandomDelay = () => Math.floor(Math.random() * (maxDelayMs - minDelayMs)) + minDelayMs;
-
-  // Планирование следующего выполнения
-  const scheduleNext = () => 
-  {
-    const delay = getRandomDelay();
-    window.setTimeout(() => 
-    {
-      callback();
-      scheduleNext();
-    }, delay);
-  };
-
-  // Первый запуск
-  scheduleNext();
-}
 
 function getRandomInt(aMin, aMax) 
 {
