@@ -127,7 +127,7 @@ function init()
     isCurrentTabYouTube().then(isYouTube =>
     {    
         IS_YOUTUBE = true;
-        console.log("CurrentTab: YouTube");
+        console.log("Check for youtube");
         if(IS_ANDROID)
         {
             console.log("YouTube android");
@@ -140,7 +140,7 @@ function init()
     
     isCurrentTabVimeo().then(isVimeo =>
     {    
-        console.log("CurrentTab: Vimeo");        
+        console.log("Check for vimeo");        
         if(isVimeo)
         {
             window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
@@ -182,18 +182,21 @@ window.addEventListener("beforeunload", (e) => {
 
 // Удерживаем фокус вкладки, если на ней есть активное видео
 browser.tabs.onActivated.addListener((activeInfo) => {
-  browser.tabs.get(activeInfo.tabId)
-    .then(tab => {
-      return browser.tabs.executeScript(activeInfo.tabId, {
-        code: `document.querySelector('video:not(:paused), audio:not(:paused)') !== null`
-      });
-    })
-    .then(result => {
-      if (result && result[0]) {
-        console.log("Media is playing, keeping tab active.");
-      }
-    })
-    .catch(error => console.error("Error:", error));
+  browser.tabs.executeScript(activeInfo.tabId, {
+    code: `{
+      const elements = document.querySelectorAll('video, audio');
+      Array.from(elements).some(el => !el.paused);
+    }`
+  }).then(result => {
+    if (result && result[0]) {
+      console.log("Autoclosing blocked");
+    }
+  }).catch(error => {
+    // Игнорируем ошибки вкладок с about: или защищённых страниц
+    if (!error.message.includes("Cannot access contents")) {
+      console.error("", error.message);
+    }
+  });
 });
 
 // --- Примеры использования обеих функций ---
