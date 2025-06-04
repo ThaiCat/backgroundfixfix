@@ -116,7 +116,7 @@ async function init()
         {
             window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
         }  
-    });
+    }
 }
 
 init();
