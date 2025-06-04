@@ -329,6 +329,7 @@ async function stopKeepingTabAlive(tabId) {
 function init()
 {
     console.log("init");
+
     isCurrentTabYouTube().then(isYouTube => 
     {    
         IS_YOUTUBE = isYouTube;
