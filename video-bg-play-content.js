@@ -64,7 +64,6 @@ async function isCurrentTabVimeo() {
   return false;
 }
 
-let _currentTab = null;
 /**
  * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей YouTube (или мобильным YouTube),
  * иначе возвращает false.
@@ -72,10 +71,15 @@ let _currentTab = null;
  */
 async function isCurrentTabYouTube() {
   try {
+      
+        console.log('try'); // Лог для отладки
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+     console.log('query'); // Лог для отладки
     if (tabs && tabs.length > 0) {
+        console.log('Tabs found:', tabs); // Лог для отладки
       const currentTab = tabs[0];
       _currentTab = currentTab;
+      console.log('_currentTab set to:', _currentTab); // Лог присваивания
       return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
     }
   } catch (e) {
@@ -85,40 +89,57 @@ async function isCurrentTabYouTube() {
   return false;
 }
 
-function init()
+
+function logTabs(tabs)
+{  // tabs[0].url requires the `tabs` permission or a matching host permission.
+    console.log("tabs:", tabs);
+}
+function onError(error)
 {
-    console.log("init");
-    isCurrentTabYouTube().then(isYouTube =>
-    {    
-        IS_YOUTUBE = isYouTube;
-        console.log("Check for youtube");
-        if(IS_YOUTUBE || IS_ANDROID)
-        {
-            console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
-            overrideVisibilityAPI();
-            startWorker();
-
-            console.log("tabId", tabId , "_currentTab",_currentTab );
-
-            startKeepingTabAlive(_currentTab.id);
-            
-            // Первый запуск
-            setTimeout(simulateActivityCycle, getMainDelay());
-        }
-    });
-    
-    isCurrentTabVimeo().then(isVimeo =>
-    {    
-        console.log("Check for vimeo");        
-        if(isVimeo)
-        {
-            console.log("isVimeo:",isVimeo);
-            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
-        }  
-    });
+    console.error(`Error: ${error}`);
 }
 
-init();
+function isCurrentTabYouTube() 
+{
+    try
+    {
+        console.log('try'); // Лог для отладки
+        //const tabs = await
+        // browser.tabs.query({ active: true, currentWindow: true }).then(logTabs, onError);
+       browser.tabs.query({ active: true, currentWindow: true }).then(tabs => 
+       {
+           console.log("tabs:", tabs);
+           if (tabs && tabs.length > 0)
+           {
+               console.log('Tabs found:', tabs); // Лог для отладки
+               const currentTab = tabs[0];
+               _currentTab = currentTab;
+               console.log('_currentTab set to:', _currentTab); // Лог присваивания
+               return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
+           }
+           return false;
+       })
+       .catch(error => 
+       {
+           console.log("[isCurrentTabYouTube] youtube tab exception ignored");
+           return false;
+       });
+
+        console.log("tabs:", tabs);
+        console.log('query'); // Лог для отладки
+    }
+    catch (e)
+    {
+        console.log("[isCurrentTabYouTube] youtube tab exception ignored");
+        return false;
+    }
+    return false;
+}
+
+
+let _currentTab = null;
+let _tabId = null;
+
 
 
 
@@ -160,7 +181,7 @@ const getMainDelay = () => Math.floor(Math.random() * 10001) + 20000;
 
 async function simulateActivityCycle()
 {
-    console.log(`[KeepAlive] Simulate activity. Timestamp: ${tabId} ${new Date().toLocaleTimeString()}`);
+    console.log(`[KeepAlive] Simulate activity. Timestamp: ${_tabId} ${new Date().toLocaleTimeString()}`);
     // 1. Mousemove
     document.dispatchEvent(new MouseEvent('mousemove', {
         clientX: Math.random() * window.innerWidth,
@@ -230,19 +251,18 @@ function simulateActivity() {
 
 // Функция для обработки изменения статуса вкладки (Vimeo/YouTube/Other)
 async function handleTabStatusChange() {
-    const isVimeo = await isCurrentTabVimeo();
-    const isYouTube = await isCurrentTabYouTube();
+  //  const isVimeo = await isCurrentTabVimeo();
+   // const isYouTube = await isCurrentTabYouTube();
     
     /*
     console.log("isVimeo", isVimeo);
     console.log("isYouTube", isYouTube);*/
 }
 
-let tabId = null;
 
 // 1. Слушатель для переключения вкладок
 browser.tabs.onActivated.addListener(async (activeInfo) => {
-    tabId = activeInfo.tabId;
+    _tabId = activeInfo.tabId;
   console.log(`[Event: onActivated] Tab ${activeInfo.tabId} activated.`);
   await handleTabStatusChange();
 });
@@ -338,3 +358,45 @@ async function stopKeepingTabAlive(tabId) {
         activeKeepAliveTabs.delete(tabId); // Удаляем из нашего списка на всякий случай
     }
 }
+
+
+
+
+
+
+function init()
+{
+    console.log("init");
+    //isCurrentTabYouTube().then(isYouTube =>
+    let isYouTube = isCurrentTabYouTube();
+    {    
+        IS_YOUTUBE = isYouTube;
+        console.log("Check for youtube");
+        if(IS_YOUTUBE || IS_ANDROID)
+        {
+            console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
+            overrideVisibilityAPI();
+            startWorker();
+
+            console.log("_tabId", _tabId , "_currentTab",_currentTab );
+
+            //startKeepingTabAlive(_currentTab.id);
+            
+            // Первый запуск
+            setTimeout(simulateActivityCycle, getMainDelay());
+        }
+    };
+    
+    isCurrentTabVimeo().then(isVimeo =>
+    {    
+        console.log("Check for vimeo");        
+        if(isVimeo)
+        {
+            console.log("isVimeo:",isVimeo);
+            window.addEventListener('fullscreenchange', evt => evt.stopImmediatePropagation(), true);
+        }  
+    });
+}
+
+init();
+
