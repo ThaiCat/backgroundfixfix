@@ -109,7 +109,7 @@ async function init()
         }
     }
     
-    let isVimeo =  isCurrentTabVimeo()
+    let isVimeo = await isCurrentTabVimeo();
     {
         console.log("isVimeo:",isVimeo);     
         if(isVimeo)
