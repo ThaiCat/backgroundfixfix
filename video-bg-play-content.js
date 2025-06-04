@@ -101,7 +101,9 @@ async function init()
             console.log("tabId", tabId , "_currentTab",_currentTab );
 
             if(_currentTab)
-            startKeepingTabAlive(_currentTab.id);
+            {
+                startKeepingTabAlive(_currentTab.id);
+            }
             
             // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
