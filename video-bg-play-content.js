@@ -71,21 +71,17 @@ let _currentTab = null;
  * @returns {Promise<boolean>} Промис, который разрешается в true, если текущая активная вкладка - YouTube, иначе false.
  */
 async function isCurrentTabYouTube() {
-  //try {
+  try {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    
-      console.log("tabs " ,tabs);
-    if (tabs && tabs.length > 0) 
-    {
+    if (tabs && tabs.length > 0) {
       const currentTab = tabs[0];
-      console.log("currentTab " ,currentTab);
       _currentTab = currentTab;
       return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
     }
-  //} catch (e) {
-  //  console.log("[isCurrentTabYouTube] youtube tab exception ignored");
-  //  return false;
-  //}
+  } catch (e) {
+    console.log("[isCurrentTabYouTube] youtube tab exception ignored");
+    return false;
+  }
   return false;
 }
 
