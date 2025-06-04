@@ -152,7 +152,7 @@ const getShortDelay = () => Math.floor(Math.random() * 500) + 500;
 const getMainDelay = () => Math.floor(Math.random() * 10001) + 20000;
 
 async function simulateActivityCycle() {
-    console.log("simulate activity");
+    console.log(`[KeepAlive] Simulate activity. Timestamp: ${new Date().toLocaleTimeString()}`);
   // 1. Mousemove
   document.dispatchEvent(new MouseEvent('mousemove', {
     clientX: Math.random() * window.innerWidth,
