@@ -4,7 +4,7 @@ const INTERVAL_MS = 20 * 1000; // Выполнять каждые 20 секун�
 
 function activateKeepAlive() {
     if (keepAliveInterval) {
-        console.log("[KeepAlive] Интервал уже запущен.");
+        console.log("[KeepAlive] Interval is already active.");
         return;
     }
 
@@ -13,7 +13,7 @@ function activateKeepAlive() {
         // и сигнализировать браузеру об активности.
         // Можно менять заголовок, делать легкие DOM-манипуляции,
         // или просто выполнять console.log (Firefox может использовать логирование как сигнал активности)
-        console.log(`[KeepAlive] Активность имитируется во вкладке. Timestamp: ${new Date().toLocaleTimeString()}`);
+        console.log(`[KeepAlive] Activity simulated in the tab. Timestamp: ${new Date().toLocaleTimeString()}`);
 
         // Дополнительные (опциональные) действия для имитации активности:
         // document.title = document.title; // Изменение заголовка на самого себя
@@ -25,14 +25,14 @@ function activateKeepAlive() {
 
     }, INTERVAL_MS);
 
-    console.log(`[KeepAlive] Интервал запущен каждые ${INTERVAL_MS / 1000} секунд.`);
+    console.log(`[KeepAlive] Interval started every ${INTERVAL_MS / 1000} seconds.`);
 }
 
 function deactivateKeepAlive() {
     if (keepAliveInterval) {
         clearInterval(keepAliveInterval);
         keepAliveInterval = null;
-        console.log("[KeepAlive] Интервал остановлен.");
+        console.log("[KeepAlive] Interval stopped.");
     }
 }
 

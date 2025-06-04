@@ -85,10 +85,10 @@ async function isCurrentTabYouTube() {
   return false;
 }
 
-function init()
+async function init()
 {
+    let isYouTube = await isCurrentTabYouTube();
     console.log("init");
-    isCurrentTabYouTube().then(isYouTube =>
     {    
         IS_YOUTUBE = isYouTube;
         console.log("Check for youtube");
@@ -105,7 +105,7 @@ function init()
             // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
         }
-    });
+    }
     
     isCurrentTabVimeo().then(isVimeo =>
     {    
@@ -160,7 +160,7 @@ const getMainDelay = () => Math.floor(Math.random() * 10001) + 20000;
 
 async function simulateActivityCycle()
 {
-    console.log(`[KeepAlive] Simulate activity. Timestamp: ${tabId} ${new Date().toLocaleTimeString()}`);
+    console.log(`[simulateActivityCycle] Simulate activity. Timestamp: ${tabId} ${new Date().toLocaleTimeString()}`);
     // 1. Mousemove
     document.dispatchEvent(new MouseEvent('mousemove', {
         clientX: Math.random() * window.innerWidth,
