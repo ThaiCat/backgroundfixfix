@@ -85,6 +85,7 @@ async function isCurrentTabYouTube() {
 
 function init()
 {
+    console.log("init");
     isCurrentTabYouTube().then(isYouTube =>
     {    
         IS_YOUTUBE = isYouTube;
@@ -206,6 +207,7 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     await handleTabStatusChange();
   }
 });
+
 
 /*
 // 3. Начальная проверка при запуске расширения
