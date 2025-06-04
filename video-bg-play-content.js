@@ -203,8 +203,15 @@ browser.tabs.onActivated.addListener(async (activeInfo) => {
 });
 
 // 2. Слушатель для обновлений вкладки
-browser.tabs.onUpdated.addListener(() => {init();});
+//browser.tabs.onUpdated.addListener(() => {init();});
 
+// 2. Слушатель для обновлений вкладки
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
+    console.log(`[Event: onUpdated] CurrentTab ${tabId} updated.`);
+    await handleTabStatusChange();
+  }
+});
 
 /*
 // 3. Начальная проверка при запуске расширения
