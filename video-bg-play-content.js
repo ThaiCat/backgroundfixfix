@@ -89,14 +89,14 @@ function init()
     {    
         IS_YOUTUBE = isYouTube;
         console.log("Check for youtube");
-        if(IS_ANDROID)
+        if(IS_YOUTUBE || IS_ANDROID)
         {
             console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
             overrideVisibilityAPI();
             
             // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
-        }    
+        }
     });
     
     isCurrentTabVimeo().then(isVimeo =>
