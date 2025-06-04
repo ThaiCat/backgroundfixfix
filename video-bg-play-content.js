@@ -329,7 +329,7 @@ async function stopKeepingTabAlive(tabId) {
 function init()
 {
     console.log("init");
-    let isYouTube = isCurrentTabYouTube();
+    isCurrentTabYouTube().then(isYouTube => 
     {    
         IS_YOUTUBE = isYouTube;
         console.log("Check for youtube");
@@ -346,7 +346,7 @@ function init()
             // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
         }
-    };
+    });
     
     isCurrentTabVimeo().then(isVimeo =>
     {    
