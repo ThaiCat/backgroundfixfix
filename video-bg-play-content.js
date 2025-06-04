@@ -152,7 +152,7 @@ const getShortDelay = () => Math.floor(Math.random() * 500) + 500;
 const getMainDelay = () => Math.floor(Math.random() * 10001) + 20000;
 
 async function simulateActivityCycle() {
-    console.log(`[KeepAlive] Simulate activity. Timestamp: ${new Date().toLocaleTimeString()}`);
+    console.log(`[KeepAlive] Simulate activity. Timestamp: ${tabId} ${new Date().toLocaleTimeString()}`);
   // 1. Mousemove
   document.dispatchEvent(new MouseEvent('mousemove', {
     clientX: Math.random() * window.innerWidth,
@@ -193,9 +193,11 @@ async function handleTabStatusChange() {
     console.log("isYouTube", isYouTube);*/
 }
 
+let tabId = null;
 
 // 1. Слушатель для переключения вкладок
 browser.tabs.onActivated.addListener(async (activeInfo) => {
+    tabId = activeInfo.tabId;
   console.log(`[Event: onActivated] Tab ${activeInfo.tabId} activated.`);
   await handleTabStatusChange();
 });
