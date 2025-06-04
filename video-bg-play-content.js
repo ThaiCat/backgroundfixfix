@@ -180,24 +180,6 @@ window.addEventListener("beforeunload", (e) => {
   }
 }, { capture: true });
 
-// Удерживаем фокус вкладки, если на ней есть активное видео
-browser.tabs.onActivated.addListener((activeInfo) => {
-  browser.tabs.executeScript(activeInfo.tabId, {
-    code: `{
-      const elements = document.querySelectorAll('video, audio');
-      Array.from(elements).some(el => !el.paused);
-    }`
-  }).then(result => {
-    if (result && result[0]) {
-      console.log("Autoclosing blocked");
-    }
-  }).catch(error => {
-    // Игнорируем ошибки вкладок с about: или защищённых страниц
-    if (!error.message.includes("Cannot access contents")) {
-      console.error("", error.message);
-    }
-  });
-});
 
 // --- Примеры использования обеих функций ---
 
