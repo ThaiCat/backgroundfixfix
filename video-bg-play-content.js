@@ -182,6 +182,11 @@ window.addEventListener("beforeunload", (e) => {
 
 
 
+// Генерация случайной задержки между 500-1000 мс
+const getShortDelay = () => Math.floor(Math.random() * 500) + 500;
+
+// Генерация случайной задержки между 20-30 секунд
+const getMainDelay = () => Math.floor(Math.random() * 10001) + 20000;
 
 async function simulateActivityCycle() {
   // 1. Mousemove
