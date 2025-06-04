@@ -74,6 +74,26 @@ function onError(error)
     console.error(`Error: ${error}`);
 }
 
+/**
+ * Асинхронная функция, которая возвращает true, если текущая активная вкладка является страницей YouTube (или мобильным YouTube),
+ * иначе возвращает false.
+ * @returns {Promise<boolean>} Промис, который разрешается в true, если текущая активная вкладка - YouTube, иначе false.
+ */
+async function isCurrentTabYouTube() {
+  try {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs.length > 0) {
+      const currentTab = tabs[0];
+      return currentTab.url && YOUTUBE_URL_REGEX.test(currentTab.url);
+    }
+  } catch (error) {
+    console.error("[isCurrentTabYouTube] Ошибка при получении текущей вкладки:", error);
+    return false;
+  }
+  return false;
+}
+
+/*
 function isCurrentTabYouTube() 
 {
     return browser.tabs.query({ active: true, currentWindow: true }).then(tabs => 
@@ -97,7 +117,7 @@ function isCurrentTabYouTube()
         return false;
     });
 }
-
+*/
 
 let _currentTab = null;
 let _tabId = null;
