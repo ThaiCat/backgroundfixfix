@@ -181,6 +181,37 @@ window.addEventListener("beforeunload", (e) => {
 }, { capture: true });
 
 
+
+
+async function simulateActivityCycle() {
+  // 1. Mousemove
+  document.dispatchEvent(new MouseEvent('mousemove', {
+    clientX: Math.random() * window.innerWidth,
+    clientY: Math.random() * window.innerHeight
+  }));
+  await new Promise(r => setTimeout(r, getShortDelay()));
+
+  // 2. Keydown + Keyup
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }));
+  await new Promise(r => setTimeout(r, Math.random() * 150 + 50));
+  document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }));
+  await new Promise(r => setTimeout(r, getShortDelay()));
+
+  // 3. Scroll
+  window.scrollBy(0, Math.random() * 10 - 5); // Минимальная прокрутка
+  await new Promise(r => setTimeout(r, getShortDelay()));
+
+  // Следующий цикл через 20-30 сек
+  setTimeout(simulateActivityCycle, getMainDelay());
+}
+
+// Первый запуск
+setTimeout(simulateActivityCycle, getMainDelay());
+
+
+
+
+
 // --- Примеры использования обеих функций ---
 
 // Функция для обработки изменения статуса вкладки (Vimeo/YouTube/Other)
