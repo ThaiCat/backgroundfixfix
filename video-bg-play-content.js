@@ -94,6 +94,7 @@ function init()
         {
             console.log("IS_YOUTUBE:",IS_YOUTUBE, ", IS_ANDROID:",IS_ANDROID);
             overrideVisibilityAPI();
+            startWorker();
             
             // Первый запуск
             setTimeout(simulateActivityCycle, getMainDelay());
@@ -151,33 +152,71 @@ const getShortDelay = () => Math.floor(Math.random() * 500) + 500;
 // Генерация случайной задержки между 20-30 секунд
 const getMainDelay = () => Math.floor(Math.random() * 10001) + 20000;
 
-async function simulateActivityCycle() {
+async function simulateActivityCycle()
+{
     console.log(`[KeepAlive] Simulate activity. Timestamp: ${tabId} ${new Date().toLocaleTimeString()}`);
-  // 1. Mousemove
-  document.dispatchEvent(new MouseEvent('mousemove', {
-    clientX: Math.random() * window.innerWidth,
-    clientY: Math.random() * window.innerHeight
-  }));
-  await new Promise(r => setTimeout(r, getShortDelay()));
-
-  // 2. Keydown + Keyup
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }));
-  await new Promise(r => setTimeout(r, Math.random() * 150 + 50));
-  document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }));
-  await new Promise(r => setTimeout(r, getShortDelay()));
-
-  // 3. Scroll
-  window.scrollBy(0, Math.random() * 10 - 5); // Минимальная прокрутка
-  await new Promise(r => setTimeout(r, getShortDelay()));
-
-  // Следующий цикл через 20-30 сек
-  setTimeout(simulateActivityCycle, getMainDelay());
+    // 1. Mousemove
+    document.dispatchEvent(new MouseEvent('mousemove', {
+        clientX: Math.random() * window.innerWidth,
+        clientY: Math.random() * window.innerHeight
+    }));
+    await new Promise(r => setTimeout(r, getShortDelay()));
+    
+    // 2. Keydown + Keyup
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }));
+    await new Promise(r => setTimeout(r, Math.random() * 150 + 50));
+    document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }));
+    await new Promise(r => setTimeout(r, getShortDelay()));
+    
+    // 3. Scroll
+    window.scrollBy(0, Math.random() * 10 - 5); // Минимальная прокрутка
+    await new Promise(r => setTimeout(r, getShortDelay()));
+        
+    // Дополнительная активность для YouTube
+    if (IS_YOUTUBE)
+    {
+        document.querySelector('video')?.play();
+    }
+    // Следующий цикл через 20-30 сек
+    setTimeout(simulateActivityCycle, getMainDelay());
 }
 
 // Первый запуск
 //setTimeout(simulateActivityCycle, getMainDelay());
+function startWorker()
+{
+  console.log('Starting Web Worker');
+  
+  const worker = new Worker('worker.js');
+  
+  worker.onmessage = (e) =>
+  {
+      // "debug: Worker активен"
+      console.log("worker message: ", e.data);
+  };
 
-
+  worker.postMessage('start');
+}
+/*
+function simulateActivity() {
+  try {
+    console.log('Simulating activity');
+    
+    // Имитация пользовательской активности
+    const events = ['mousemove', 'keydown', 'scroll'];
+    events.forEach(event => {
+      document.dispatchEvent(new Event(event, { bubbles: true }));
+    });
+    
+    // Дополнительная активность для YouTube
+    if (IS_YOUTUBE) {
+      document.querySelector('video')?.play();
+    }
+  } catch (e) {
+    console.error('Activity simulation failed:', e);
+  }
+}
+*/
 
 
 
